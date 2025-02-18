@@ -1,0 +1,78 @@
+// This is your Prisma schema file
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String     @id @default(uuid())
+  name      String
+  email     String     @unique
+  password  String
+  createdAt DateTime   @default(now())
+  deletedAt DateTime?
+  categories Category[]
+  cards     Card[]
+
+  @@map("users")
+}
+
+model Category {
+  id           String         @id @default(uuid())
+  title        String
+  image        String
+  imageMetadata ImageMetadata? @relation(fields: [imageMetadataId], references: [id])
+  imageMetadataId String?     @unique
+  order        Int
+  cards        Card[]
+  createdBy    User          @relation(fields: [userId], references: [id])
+  userId       String
+  createdAt    DateTime      @default(now())
+  deletedAt    DateTime?
+  updatedAt    DateTime      @updatedAt
+  hasPreview   Boolean       @default(false)
+  isAvailable  Boolean       @default(true)
+
+  @@map("categories")
+}
+
+model Card {
+  id             String         @id @default(uuid())
+  title          String
+  description    String
+  genre          String
+  image          String
+  imageMetadata  ImageMetadata? @relation(fields: [imageMetadataId], references: [id])
+  imageMetadataId String?      @unique
+  order          String        // Using String to accommodate both numeric and "random" values
+  expiration     DateTime?     // Null represents "infinite"
+  isAvailable    Boolean       @default(true)
+  createdBy      User          @relation(fields: [userId], references: [id])
+  userId         String
+  category       Category      @relation(fields: [categoryId], references: [id])
+  categoryId     String
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  deletedAt      DateTime?
+  isHot          Boolean       @default(false)
+  isPreview      Boolean       @default(false)
+
+  @@map("cards")
+}
+
+model ImageMetadata {
+  id        String    @id @default(uuid())
+  width     Int
+  height    Int
+  size      Int       // Size in KB
+  mimeType  String
+  url       String
+  category  Category?
+  card      Card?
+
+  @@map("image_metadata")
+}
