@@ -48,7 +48,7 @@ model Card {
   image          String
   imageMetadata  ImageMetadata? @relation(fields: [imageMetadataId], references: [id])
   imageMetadataId String?      @unique
-  order          String        // Using String to accommodate both numeric and "random" values
+  order          Int          @default(1)
   expiration     DateTime?     // Null represents "infinite"
   isAvailable    Boolean       @default(true)
   createdBy      User          @relation(fields: [userId], references: [id])

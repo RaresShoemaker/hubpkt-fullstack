@@ -47,7 +47,7 @@ export const createCategory = catchAsync(async (req: MulterRequest, res: Respons
   validateImageFile(req.file);
 
   // Validate body
-  const validatedData = createCategorySchema.parse(req.body);
+  const validatedData = createCategorySchema.parse({...req.body, userId: req.user?.userId});
 
   // Get next order number
   const order = await CategoryServices.getNextCategoryOrder();

@@ -1,6 +1,7 @@
 import express from 'express';
 import userRoute from './user.route';
 import categoryRoute from './category.route';
+import cardRoute from './card.route';
 
 const router = express.Router();
 
@@ -12,6 +13,10 @@ const defaultRoutes = [
   {
     path: '/categories',
     route: categoryRoute,
+  },
+  {
+    path: '/cards',
+    route: cardRoute,
   }
 ]
 
