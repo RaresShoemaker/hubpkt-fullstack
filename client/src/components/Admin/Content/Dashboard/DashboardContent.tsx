@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import CategoryCard from '../../Category/CategoryCard';
 import ModalPortal from '../../Modal';
+import CategoryForm from '../../forms/CategoryForm/CategoryForm';
 import { useTheme } from '../../../../store/features/ui/useUITheme';
 import { useCategories } from '../../../../store/features/categories/useCategories';
 import { useAuth } from '../../../../store/features/auth/useAuth';
@@ -10,13 +11,23 @@ const DashboardContent: React.FC = () => {
   const { items } = useCategories();
   const { user } = useAuth();
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editCategoryId, setEditCategoryId] = useState<string | undefined>(undefined);
 
   const handleCreateCategory = () => {
+    setEditCategoryId(undefined);
+    setIsModalOpen(true);
+  };
+
+  const handleEditCategory = (categoryId: string) => {
+    setEditCategoryId(categoryId);
     setIsModalOpen(true);
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
+    setTimeout(() => {
+      setEditCategoryId(undefined);
+    }, 300);
   };
 
   return (
@@ -41,22 +52,31 @@ const DashboardContent: React.FC = () => {
       {/* Content area */}
       <div>
         <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
-          {/* Widget cards */}
+          {/* Category cards with built-in edit functionality */}
           {items.map((category) => (
-            <CategoryCard key={category.id} {...category} />
+            <CategoryCard 
+              key={category.id} 
+              {...category} 
+              onEdit={handleEditCategory}
+            />
           ))}
+          
+          {/* Create new category card */}
           <CategoryCard isForCreate onClick={handleCreateCategory} />
         </div>
       </div>
       
-      {/* Modal Portal */}
+      {/* Modal Portal with dynamic title based on mode */}
       <ModalPortal
         isOpen={isModalOpen}
         onClose={closeModal}
-        title="Create New Category"
-        maxWidth="md"
+        title={editCategoryId ? "Edit Category" : "Create New Category"}
+        maxWidth="lg"
       >
-        <p>asd</p>
+        <CategoryForm 
+          categoryId={editCategoryId} 
+          onClose={closeModal} 
+        />
       </ModalPortal>
     </div>
   );

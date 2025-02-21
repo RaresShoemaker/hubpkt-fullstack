@@ -18,8 +18,8 @@ interface RequestWithFile extends Request {
 // Validation schema for category creation
 const createCategorySchema = z.object({
   title: z.string().min(2).max(100),
-  hasPreview: z.boolean().optional().default(false),
-  isAvailable: z.boolean().optional().default(true),
+  hasPreview: z.string(),
+  isAvailable: z.string(),
   userId: z.string().uuid()
 });
 
@@ -56,8 +56,8 @@ export const createCategory = catchAsync(async (req: MulterRequest, res: Respons
   const category = await CategoryServices.createCategory(
     {
       title: validatedData.title,
-      hasPreview: validatedData.hasPreview,
-      isAvailable: validatedData.isAvailable,
+      hasPreview: validatedData.hasPreview === "true",
+      isAvailable: validatedData.isAvailable === "true",
       userId: validatedData.userId,
       order
     },
@@ -74,13 +74,6 @@ export const createCategory = catchAsync(async (req: MulterRequest, res: Respons
 export const updateCategory = catchAsync(async (req: RequestWithFile, res: Response) => {
   const { id } = req.params;
 
-  // Validate body if present
-  let validatedData = {};
-  if (Object.keys(req.body).length > 0) {
-    const updateSchema = createCategorySchema.partial();
-    validatedData = updateSchema.parse(req.body);
-  }
-
   // Validate file if present
   if (req.file) {
     validateImageFile(req.file);
@@ -88,7 +81,10 @@ export const updateCategory = catchAsync(async (req: RequestWithFile, res: Respo
 
   const category = await CategoryServices.updateCategory(
     id,
-    validatedData,
+    {...req.body,
+      hasPreview: req.body.hasPreview === "true",
+      isAvailable: req.body.isAvailable === "true"
+    },
     req.file?.buffer,
     req.file?.originalname
   );
@@ -153,7 +149,6 @@ export const listCategories = catchAsync(async (req: Request, res: Response) => 
     orderBy: { [orderBy]: order },
     where: {
       deletedAt: null,
-      isAvailable: true
     }
   });
 

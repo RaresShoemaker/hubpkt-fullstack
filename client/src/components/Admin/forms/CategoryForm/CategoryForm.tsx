@@ -15,7 +15,8 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ categoryId, onClose }) => {
     items, 
     operations, 
     createNewCategory, 
-    updateExistingCategory 
+    updateExistingCategory,
+    deleteCategoryById,
   } = useCategories();
   const { user } = useAuth();
   
@@ -56,6 +57,7 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ categoryId, onClose }) => {
   // Handle input changes
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
+
     setFormData({
       ...formData,
       [name]: type === 'checkbox' ? checked : value
@@ -74,9 +76,10 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ categoryId, onClose }) => {
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+
       
       // Validate file type
-      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+      const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'image/svg'];
       if (!validTypes.includes(file.type)) {
         setErrors({
           ...errors,
@@ -153,7 +156,6 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ categoryId, onClose }) => {
         onClose();
       }
     } else {
-      // Create new category
       if (!user) return;
       
       const createData = {
@@ -171,6 +173,13 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ categoryId, onClose }) => {
       }
     }
   };
+
+  const handleDeleteCategory = () => {
+    if(categoryId) {
+      deleteCategoryById(categoryId);
+      onClose();
+    }
+  }
 
   // Determine if we're in create or update mode
   const isUpdateMode = Boolean(categoryId);
@@ -319,6 +328,11 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ categoryId, onClose }) => {
         >
           {isLoading ? 'Saving...' : isUpdateMode ? 'Update Category' : 'Create Category'}
         </button>
+        {isUpdateMode && (
+          <button onClick={handleDeleteCategory} className="text-red-500">
+            Delete Category
+          </button>
+        )}
       </div>
     </form>
   );

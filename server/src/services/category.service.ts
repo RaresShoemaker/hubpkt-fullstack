@@ -299,7 +299,6 @@ export async function deleteCategory(id: string) {
 
 		// First, delete the associated image metadata if it exists
 		if (category.imageMetadata) {
-			console.log(category.imageMetadata)
 			await prisma.imageMetadata.delete({
 				where: { id: category.imageMetadata.id }
 			});

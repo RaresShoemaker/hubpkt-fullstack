@@ -13,8 +13,15 @@ export const createCategory = createAsyncThunk(
 	'categories/create',
 	async (data: CreateCategoryRequest, { rejectWithValue }) => {
 		try {
-			const response = await api.post<Category>(API_ENDPOINTS.categories.create, data);
-			return response.data;
+
+      const config = {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      }
+
+			const response = await api.post(API_ENDPOINTS.categories.create, data, config);
+			return response.data.data;
 		} catch (error: any) {
 			return rejectWithValue(
 				error.response?.data?.message || 'An error occurred while creating the category'
@@ -27,8 +34,13 @@ export const updateCategory = createAsyncThunk(
 	'categories/update',
 	async (data: UpdateCategoryRequest, { rejectWithValue }) => {
 		try {
-			const response = await api.put<Category>(API_ENDPOINTS.categories.update(data.id), data);
-			return response.data;
+      const config = {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      }
+			const response = await api.patch(API_ENDPOINTS.categories.update(data.id), data, config);
+			return response.data.data;
 		} catch (error: any) {
 			return rejectWithValue(
 				error.response?.data?.message || 'An error occurred while updating the category'
