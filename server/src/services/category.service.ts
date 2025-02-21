@@ -267,7 +267,9 @@ export async function reorderCategories(orderedCategoryIds: string[]) {
 			)
 		);
 
-		return true;
+		const updatedCategories = (await prisma.category.findMany())
+
+		return updatedCategories;
 	} catch (error) {
 		if (error instanceof ApiError) throw error;
 		throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, `Failed to reorder categories: ${error.message}`);
@@ -297,6 +299,7 @@ export async function deleteCategory(id: string) {
 
 		// First, delete the associated image metadata if it exists
 		if (category.imageMetadata) {
+			console.log(category.imageMetadata)
 			await prisma.imageMetadata.delete({
 				where: { id: category.imageMetadata.id }
 			});

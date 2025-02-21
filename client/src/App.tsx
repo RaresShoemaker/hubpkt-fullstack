@@ -23,7 +23,6 @@ const App: React.FC = () => {
 					<AnalyticsTracker />
 					<Routes>
 						<Route element={<PageLayout />}>
-							{/* Protected route that requires authentication */}
 							<Route path='/submission' element={<SubmissionPage />} />
 						</Route>
 
@@ -48,7 +47,6 @@ const App: React.FC = () => {
 							}
 						/>
 
-						{/* Another protected route example */}
 						<Route
 							path='/creatorhub'
 							element={
