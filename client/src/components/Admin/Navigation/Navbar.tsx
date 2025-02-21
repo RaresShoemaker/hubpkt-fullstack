@@ -5,6 +5,7 @@ import LogoutButton from '../Buttons/Logout';
 import { useCategories } from '../../../store/features/categories/useCategories';
 import { Category } from '../../../store/features/categories/categories.types';
 import NavigationButton from './NavigationButton';
+import ButtonBase from '../Buttons/ButtonBase';
 
 const Navigation: React.FC = () => {
   const { isDark } = useTheme();
@@ -14,7 +15,7 @@ const Navigation: React.FC = () => {
     fetchCategoriesList();
   }, [fetchCategoriesList]);
 
-  const handleCategoryChange = (category: Category) => {
+  const handleCategoryChange = (category: Category | null) => {
     changeCurrentCategory(category);
   }
 
@@ -36,6 +37,14 @@ const Navigation: React.FC = () => {
         </div>
       
         <nav className='space-y-2'>
+          <ButtonBase
+            onClick={() => handleCategoryChange(null)}
+            variant='ghost'
+            isSelected={!currentCategory}
+          >
+            Dashboard Overview
+          </ButtonBase>
+
           {isLoading?.list ? (
             <p className={isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}>
               Loading categories...

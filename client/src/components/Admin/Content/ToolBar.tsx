@@ -4,9 +4,9 @@ import { ArrowLeftRight,SaveIcon } from 'lucide-react';
 
 interface ToolBarProps {
   isEditOrder: boolean;
-  handleEditOrder: () => void;
-  showSaveOrder: boolean;
-  handleSaveOrder: () => void;
+  handleEditOrder?: () => void;
+  showSaveOrder?: boolean;
+  handleSaveOrder?: () => void;
 }
 
 const ToolBar: React.FC<ToolBarProps> = ({isEditOrder, handleEditOrder, showSaveOrder, handleSaveOrder}) => {

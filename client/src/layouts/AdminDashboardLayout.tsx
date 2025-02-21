@@ -1,10 +1,13 @@
 import React from 'react';
 import { useTheme } from '../store/features/ui/useUITheme';
+import { useCategories } from '../store/features/categories/useCategories';
 import Navigation from '../components/Admin/Navigation/Navbar';
 import DashboardContent from '../components/Admin/Content/Dashboard/DashboardContent';
+import CategoryContent from '../components/Admin/Content/Category/CategoryContent';
 
 const AdminDashboardLayout: React.FC = () => {
 	const { isDark } = useTheme();
+	const { currentCategory } = useCategories();
 
 	return (
 		<div
@@ -14,7 +17,8 @@ const AdminDashboardLayout: React.FC = () => {
 			}`}
 		>
 			<Navigation />
-			<DashboardContent />
+			{!currentCategory && <DashboardContent />}
+			{currentCategory && <CategoryContent id={currentCategory.id} />}
 		</div>
 	);
 };

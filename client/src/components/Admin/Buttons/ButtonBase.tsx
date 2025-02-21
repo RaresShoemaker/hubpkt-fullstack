@@ -7,6 +7,7 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   isLoading?: boolean;
   leftIcon?: React.ReactNode;
   rightIcon?: React.ReactNode;
+  isSelected?: boolean;
 }
 
 export const ButtonBase: React.FC<ButtonProps> = ({
@@ -18,6 +19,7 @@ export const ButtonBase: React.FC<ButtonProps> = ({
   rightIcon,
   className = '',
   disabled,
+  isSelected,
   ...props
 }) => {
   const { isDark } = useTheme();
@@ -39,14 +41,27 @@ export const ButtonBase: React.FC<ButtonProps> = ({
       : 'bg-light-surface text-light-text-primary border border-light-border hover:bg-light-border/20 disabled:bg-light-surface/50',
     ghost: isDark
       ? 'bg-dark-surface text-dark-text-primary hover:bg-dark-accent/10 disabled:text-dark-text-secondary'
-      : 'bg-light-surface text-light-text-primary hover:bg-light-accent/10 disabled:text-light-text-secondary'
+      : 'bg-light-surface text-light-text-primary hover:bg-light-accent/10 disabled:text-light-text-secondary',
   };
+
+  const selectedStyles = {
+    primary: isDark
+      ? 'bg-dark-accent/90 text-white'
+      : 'bg-light-accent/90 text-white',
+    secondary: isDark
+      ? 'bg-dark-border/20 text-dark-text-primary'
+      : 'bg-light-border/20 text-light-text-primary',
+    ghost: isDark
+      ? 'bg-dark-accent/10 text-dark-text-primary'
+      : 'bg-light-accent/10 text-light-text-primary',
+  }
 
   return (
     <button
       className={`
         ${baseStyles}
         ${sizeStyles[size]}
+        ${isSelected && selectedStyles[variant]}
         ${variantStyles[variant]}
         ${isLoading || disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
         ${className}
