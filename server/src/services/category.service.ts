@@ -267,7 +267,12 @@ export async function reorderCategories(orderedCategoryIds: string[]) {
 			)
 		);
 
-		const updatedCategories = (await prisma.category.findMany())
+		const updatedCategories = (await prisma.category.findMany({
+			where: {
+				id: { in: orderedCategoryIds }
+			},
+			orderBy: { order: 'asc' }
+		}))
 
 		return updatedCategories;
 	} catch (error) {

@@ -2,6 +2,7 @@ import React, { useState, useEffect, ChangeEvent } from 'react';
 import { useTheme } from '../../../../store/features/ui/useUITheme';
 import { useCategories } from '../../../../store/features/categories/useCategories';
 import { useAuth } from '../../../../store/features/auth/useAuth';
+import ButtonBase from '../../Buttons/ButtonBase';
 
 
 interface CategoryFormProps {
@@ -304,34 +305,31 @@ const CategoryForm: React.FC<CategoryFormProps> = ({ categoryId, onClose }) => {
       )}
       
       {/* Form buttons */}
-      <div className="flex justify-end mt-6 gap-3">
-        <button
+      <div className="flex justify-center mt-6 gap-3 ">
+        <ButtonBase
           type="button"
+          variant='secondary'
           onClick={onClose}
-          className={`px-4 py-2 rounded ${
-            isDark 
-              ? 'bg-dark-surface text-dark-text-primary border border-dark-border/50' 
-              : 'bg-light-surface text-light-text-primary border border-light-border/50'
-          }`}
+          className="font-semibold"
           disabled={isLoading}
         >
           Cancel
-        </button>
-        <button
+        </ButtonBase>
+        <ButtonBase
           type="submit"
-          className={`px-4 py-2 rounded ${
-            isDark 
-              ? 'bg-dark-text-accent text-white' 
-              : 'bg-light-text-accent text-white'
-          } ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
+          className="bg-dark-text-accent text-white font-semibold"
           disabled={isLoading}
         >
           {isLoading ? 'Saving...' : isUpdateMode ? 'Update Category' : 'Create Category'}
-        </button>
+        </ButtonBase>
         {isUpdateMode && (
-          <button onClick={handleDeleteCategory} className="text-red-500">
+          <ButtonBase
+            onClick={handleDeleteCategory}
+            className=" font-semibold"
+            variant='ghost'
+          >
             Delete Category
-          </button>
+          </ButtonBase>
         )}
       </div>
     </form>

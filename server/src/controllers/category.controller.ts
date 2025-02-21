@@ -112,17 +112,16 @@ export const updateCategoryOrder = catchAsync(async (req: Request, res: Response
 });
 
 export const reorderCategories = catchAsync(async (req: Request, res: Response) => {
-  const schema = z.object({
-    categoryIds: z.array(z.string().uuid())
-  });
+  const schema = z.array(z.string().uuid());
+  const categoryIds = schema.parse(req.body);
 
-  const { categoryIds } = schema.parse(req.body);
-
-  await CategoryServices.reorderCategories(categoryIds);
+  const categories = await CategoryServices.reorderCategories(categoryIds);
+  console.log(categories);
 
   res.json({
     status: "success",
-    message: "Categories reordered successfully"
+    message: "Categories reordered successfully",
+    data: categories
   });
 });
 

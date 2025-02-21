@@ -73,12 +73,12 @@ const CategoryCard: React.FC<CategoryCardProps> = (props) => {
       {/* Edit overlay that appears on hover */}
       {isHovered && onEdit && (
         <div 
-          className={`absolute inset-0 flex items-center justify-center 
+          className={`absolute inset-0 flex items-center justify-center z-20
             rounded-xl transition-opacity duration-200
             ${isDark ? 'bg-dark-background/70' : 'bg-light-background/70'}`}
           onClick={handleEditClick}
         >
-          <div className={`p-3 rounded-full cursor-pointer
+          <div className={`p-3 rounded-full cursor-pointer z-20
             ${isDark ? 'bg-dark-surface hover:bg-dark-surface/80' : 'bg-light-surface hover:bg-light-surface/80'}`}>
             <Edit 
               size={24} 
@@ -95,7 +95,7 @@ const CategoryCard: React.FC<CategoryCardProps> = (props) => {
         </h3>
         <CategoryIcon image={image} title={title} size="md" />
       </div>
-      <div className='mt-4 flex gap-4'>
+      <div className='mt-4 flex gap-4 justify-center'>
         <div className='flex gap-2'>
           <p className={`${isDark ? 'text-dark-text-accent' : 'text-light-text-accent'}`}>
             {isAvailable ? 'Available' : 'Unavailable'}

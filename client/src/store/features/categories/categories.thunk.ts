@@ -94,7 +94,7 @@ export const fetchCategory = createAsyncThunk(
     'categories/updateOrder',
     async (data: UpdateCategoryOrderPayload, { rejectWithValue }) => {
       try {
-        const response = await api.put<boolean>(API_ENDPOINTS.categories.updateOrder(data.categoryId), { newOrder: data.newOrder });
+        const response = await api.patch<boolean>(API_ENDPOINTS.categories.updateOrder(data.categoryId), { newOrder: data.newOrder });
         return response.data;
       } catch (error: any) {
         return rejectWithValue(
@@ -108,8 +108,8 @@ export const fetchCategory = createAsyncThunk(
     'categories/reorder',
     async (orderedCategoryIds: string[], { rejectWithValue }) => {
       try {
-        const response = await api.put<Category[]>(API_ENDPOINTS.categories.reorder, orderedCategoryIds);
-        return response.data;
+        const response = await api.post(API_ENDPOINTS.categories.reorder, orderedCategoryIds);
+        return response.data.data;
       } catch (error: any) {
         return rejectWithValue(
           error.response?.data?.message || 'An error occurred while reordering the categories'
