@@ -60,6 +60,7 @@ model Card {
   deletedAt      DateTime?
   isHot          Boolean       @default(false)
   isPreview      Boolean       @default(false)
+  isDiscover    Boolean       @default(false)
 
   @@map("cards")
 }

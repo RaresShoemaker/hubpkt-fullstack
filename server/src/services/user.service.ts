@@ -3,6 +3,15 @@ import { prisma } from "../db/prisma-client";
 import ApiError from "../utils/ApiError";
 import { UserTypes } from "../types/index";
 import { checkPassword, generateToken, hashPassword } from "../utils/auth";
+import jwt from 'jsonwebtoken';
+import { config } from "../config/environment";
+
+
+interface TokenPayload {
+  userId: string;
+  email: string;
+  name: string;
+}
 
 export const userRegister = async (data: UserTypes.RegisterUserInput) => {
   const existingUser = await prisma.user.findUnique({ where: { email: data.email } });
@@ -46,3 +55,12 @@ export const findUserById = async (id: string) => {
   return user;
 }
 
+export const fetchCurrentUser = async (token: string) => {
+      const decoded = jwt.verify(token, config.JWT_SECRET) as TokenPayload;
+      const user = await prisma.user.findUnique({ where: { id: decoded.userId } });
+      if(!user) {
+        throw new ApiError(StatusCodes.NOT_FOUND, 'User not found');
+      }
+
+      return user;
+}

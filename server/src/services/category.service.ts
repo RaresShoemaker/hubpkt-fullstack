@@ -267,7 +267,14 @@ export async function reorderCategories(orderedCategoryIds: string[]) {
 			)
 		);
 
-		return true;
+		const updatedCategories = (await prisma.category.findMany({
+			where: {
+				id: { in: orderedCategoryIds }
+			},
+			orderBy: { order: 'asc' }
+		}))
+
+		return updatedCategories;
 	} catch (error) {
 		if (error instanceof ApiError) throw error;
 		throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, `Failed to reorder categories: ${error.message}`);

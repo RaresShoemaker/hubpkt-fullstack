@@ -36,9 +36,6 @@ export const logoutUser = catchAsync(async (req: Request, res: Response) => {
 });
 
 export const me = catchAsync(async (req: Request, res: Response) => {
-  if (!req.body.user) {
-    throw new Error('User ID is required');
-  }
-  const user = await UserServices.findUserById(req.body.user.userId);
+  const user = await UserServices.fetchCurrentUser(req.cookies.token);
   res.status(StatusCodes.OK).json({ ...omitPassword(user) });
 });
