@@ -107,7 +107,6 @@ const categoriesSlice = createSlice({
 				state.items = state.items.map((category) =>
 					category.id === action.payload.id ? action.payload : category
 				);
-				state.currentCategory = action.payload;
 			})
 			.addCase(updateCategory.rejected, (state, action) => {
 				state.operations.update.isLoading = false;

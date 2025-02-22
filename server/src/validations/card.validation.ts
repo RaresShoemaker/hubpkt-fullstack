@@ -20,6 +20,7 @@ export const cardSchema = z.object({
   userId: z.string().uuid(),
   categoryId: z.string().uuid(),
   isHot: z.boolean(),
+  isDiscover: z.boolean(),
   isPreview: z.boolean(),
 });
 

@@ -16,6 +16,7 @@ export interface Card {
   createdAt: Date;
   updatedAt: Date;
   deletedAt?: Date;
+  isDiscover: boolean;
   isHot: boolean;
   isPreview: boolean;
 }
