@@ -4,24 +4,9 @@ import { StatusCodes } from 'http-status-codes';
 import ApiError from '../utils/ApiError';
 import { UploadMediaTypes } from '../types';
 import { createImageMetadata, updateImageMetadata } from './imageMetadata.service';
+import { CategoryTypes } from '../types';
 
-// Types derived from Prisma schema
-interface CreateCategoryInput {
-	title: string;
-	hasPreview?: boolean;
-	isAvailable?: boolean;
-	order: number;
-	userId: string;
-}
-
-type UpdateCategoryInput = Partial<
-	Omit<
-		Prisma.CategoryUpdateInput,
-		'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'image' | 'imageMetadata' | 'cards'
-	>
->;
-
-export async function createCategory(data: CreateCategoryInput, imageBuffer: Buffer, fileName: string) {
+export async function createCategory(data: CategoryTypes.CreateCategoryInput, imageBuffer: Buffer, fileName: string) {
 	try {
 		// Create image metadata and upload image
 		const { imageMetadata, url } = await createImageMetadata(imageBuffer, fileName, {
@@ -62,7 +47,7 @@ export async function createCategory(data: CreateCategoryInput, imageBuffer: Buf
 
 export async function updateCategory(
 	id: string,
-	data: UpdateCategoryInput,
+	data: CategoryTypes.UpdateCategoryInput,
 	imageBuffer?: Buffer,
 	fileName?: string
 ) {
