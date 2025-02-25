@@ -2,6 +2,31 @@ import { Request, Response } from 'express';
 import { StatusCodes } from 'http-status-codes';
 import { CardService, CardServiceFetch } from '../services/index';
 import { CardTypes } from '@/types';
+import catchAsync from '../utils/catchAsync';
+
+// Helper function to convert string boolean values to actual booleans
+const convertBooleanFields = (data: any) => {
+    // List of fields that should be boolean type
+    const booleanFields = ['isAvailable', 'isHot', 'isDiscover', 'isPreview'];
+    
+    // Create a new object with converted boolean values
+    const result = { ...data };
+    
+    // Convert each boolean field if it exists
+    booleanFields.forEach(field => {
+        if (field in result) {
+            // Convert 'true'/'false' strings to actual boolean values
+            if (result[field] === 'true') {
+                result[field] = true;
+            } else if (result[field] === 'false') {
+                result[field] = false;
+            }
+            // If it's already a boolean, no need to convert
+        }
+    });
+    
+    return result;
+};
 
 // Helper function to validate orderBy parameter
 const validateOrderBy = (orderBy?: string): 'title' | 'createdAt' | 'order' | 'expiration' | undefined => {
@@ -24,9 +49,12 @@ export const createCard = async (req: Request, res: Response): Promise<void> => 
             return;
         }
 
+        // Convert string boolean values to actual booleans
+        const convertedData = convertBooleanFields(req.body);
+
         const card = await CardService.createCard(
             {
-                ...req.body,
+                ...convertedData,
                 userId: req.user?.userId
             },
             imageFile.buffer,
@@ -50,9 +78,12 @@ export const updateCard = async (req: Request, res: Response): Promise<void> => 
         const { id } = req.params;
         const imageFile = req.file;
 
+        // Convert string boolean values to actual booleans
+        const convertedData = convertBooleanFields(req.body);
+
         const card = await CardService.updateCard(
             id,
-            req.body,
+            convertedData,
             imageFile?.buffer,
             imageFile?.originalname
         );
@@ -69,6 +100,7 @@ export const updateCard = async (req: Request, res: Response): Promise<void> => 
     }
 };
 
+// The rest of the controller functions remain unchanged
 export const getCard = async (req: Request, res: Response): Promise<void> => {
     try {
         const { id } = req.params;
@@ -84,6 +116,7 @@ export const getCard = async (req: Request, res: Response): Promise<void> => {
         }
     }
 };
+
 
 export const listCards = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -120,8 +153,8 @@ export const updateCardOrder = async (req: Request, res: Response): Promise<void
             return;
         }
 
-        await CardService.updateCardOrder(id, order, categoryId);
-        res.status(StatusCodes.OK).json({ success: true });
+        const result = await CardService.updateCardOrder(id, order, categoryId);
+        res.status(StatusCodes.OK).json(result);
     } catch (error) {
         if (error.statusCode) {
             res.status(error.statusCode).json({ message: error.message });
@@ -172,6 +205,15 @@ export const deleteCard = async (req: Request, res: Response): Promise<void> => 
         }
     }
 };
+
+export const getCardsHomepage = catchAsync(async (req: Request, res: Response) => {
+    const cards = await CardServiceFetch.getCardsPreviewHomepage();
+    res.json({
+        status: StatusCodes.OK,
+        message: 'Cards retrieved successfully',
+        data: cards
+    })
+});
 
 // New controller methods for filtered card fetching
 

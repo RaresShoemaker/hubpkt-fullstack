@@ -13,7 +13,6 @@ const upload = multer({
 
 router.post('/', verifyAuth, upload.single('image'), CategoryController.createCategory);
 router.patch('/:id', verifyAuth, upload.single('image'), CategoryController.updateCategory);
-router.patch('/:id/order', verifyAuth, CategoryController.updateCategoryOrder);
 router.post('/reorder', verifyAuth, CategoryController.reorderCategories);
 router.get('/', CategoryController.listCategories);
 router.get('/:id', CategoryController.getCategory);

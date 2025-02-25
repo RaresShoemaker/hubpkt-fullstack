@@ -95,28 +95,11 @@ export const updateCategory = catchAsync(async (req: RequestWithFile, res: Respo
   });
 });
 
-export const updateCategoryOrder = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const { order } = req.body;
-
-  if (typeof order !== "number" || order < 1) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Valid order number is required");
-  }
-
-  await CategoryServices.updateCategoryOrder(id, order);
-
-  res.json({
-    status: "success",
-    message: "Category order updated successfully"
-  });
-});
-
 export const reorderCategories = catchAsync(async (req: Request, res: Response) => {
   const schema = z.array(z.string().uuid());
   const categoryIds = schema.parse(req.body);
 
   const categories = await CategoryServices.reorderCategories(categoryIds);
-  console.log(categories);
 
   res.json({
     status: "success",

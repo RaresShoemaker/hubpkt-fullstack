@@ -1,7 +1,7 @@
 import { Prisma } from '@prisma/client';
-import { prisma } from '@/db/prisma-client';
+import { prisma } from '../db/prisma-client';
 import { StatusCodes } from 'http-status-codes';
-import ApiError from '@/utils/ApiError';
+import ApiError from '../utils/ApiError';
 import { CardTypes, UploadMediaTypes } from '../types';
 import { ImageMetadataServices } from './index';
 
@@ -203,7 +203,33 @@ export const updateCardOrder = async (cardId: string, newOrder: number, category
 			throw new ApiError(StatusCodes.NOT_FOUND, 'Card not found');
 		}
 
+		let affectedCards: { id: string; previousOrder: number; newOrder: number; }[] = [];
+
+
 		if (newOrder > card.order) {
+
+			const cardsToShift = await prisma.card.findMany({
+				where: {
+					categoryId,
+					order: {
+						gt: card.order,
+						lte: newOrder
+					}
+				},
+				select: {
+					id: true,
+					order: true
+				}
+			});
+
+			affectedCards = cardsToShift.map(c => {
+				return {
+					id: c.id,
+					previousOrder: c.order,
+					newOrder: c.order - 1
+				}
+			});
+
 			await prisma.$transaction([
 				prisma.card.updateMany({
 					where: {
@@ -231,6 +257,24 @@ export const updateCardOrder = async (cardId: string, newOrder: number, category
 		}
 
 		if (newOrder < card.order) {
+
+			const cardsToShift = await prisma.card.findMany({
+				where: {
+					categoryId,
+					order: {
+						gte: newOrder,
+						lt: card.order
+					}
+				},
+				select: { id: true, order: true }
+			});
+
+			affectedCards = cardsToShift.map(c => ({ 
+				id: c.id, 
+				previousOrder: c.order, 
+				newOrder: c.order + 1 
+			}));
+
 			await prisma.$transaction([
 				prisma.card.updateMany({
 					where: {
@@ -266,10 +310,19 @@ export const updateCardOrder = async (cardId: string, newOrder: number, category
 		}
 
 		return {
-			message: 'success',
+			success: true,
 			data: updatedCard,
 			previousPosition: card.order,
-			newPosition: updatedCard.order
+			newPosition: updatedCard.order,
+			affectedCards: affectedCards,
+			categoryId: categoryId,
+			orderChanges: {
+				type: newOrder > card.order ? 'moveDown' : 'moveUp',
+				range: {
+					start: Math.min(card.order, newOrder),
+					end: Math.max(card.order, newOrder)
+				}
+			}
 		};
 	} catch (error) {
 		if (error instanceof ApiError) throw error;

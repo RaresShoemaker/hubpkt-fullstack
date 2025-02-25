@@ -1,8 +1,9 @@
 import { Prisma } from '@prisma/client';
-import { prisma } from '@/db/prisma-client';
+import { prisma } from '../db/prisma-client';
 import { StatusCodes } from 'http-status-codes';
-import ApiError from '@/utils/ApiError';
+import ApiError from '../utils/ApiError';
 import { CardTypes } from '@/types';
+import { CategoryServices } from './index';
 
 export async function getCard(id: string) {
 	const card = await prisma.card.findUnique({
@@ -381,4 +382,78 @@ function buildQueryParams(options: CardTypes.CardFilterOptions) {
 	}
 
 	return { where, orderByClause };
+}
+
+
+export const getCardsPreviewHomepage = async () => {
+	try {	
+		const categories = await prisma.category.findMany({
+			where: {
+				isAvailable: true,
+				hasPreview: true,
+			},
+			orderBy: {
+				order: 'asc'
+			}
+		})
+
+		const cards = await Promise.all(categories.map(async ({id, title}) => {
+			const currentTime = new Date();
+
+			const cards = await prisma.card.findMany({
+				where: {
+					categoryId: id,
+					isPreview: true,
+					isAvailable: true,
+					deletedAt: null,
+					expiration: {
+						gt: currentTime
+					}
+				},
+				orderBy: {
+					order: 'asc'
+				},
+			})
+
+			return {
+				categoryTitle: title,
+				categoryId: id,
+				cards: cards
+			}
+		}
+	))
+	const cardsByCategory = cards.reduceRight((acc: Record<string, any>, item) => {
+		acc[item.categoryId] = item.cards;
+		return acc;
+	}, {} as Record<string, any>);
+
+	const [hotCards, discoverCards] = await Promise.all([
+		prisma.card.findMany({
+			where: {
+				isHot: true,
+				isAvailable: true,
+				deletedAt: null,
+				expiration: {
+					gt: new Date()
+				}
+			}
+		}),
+		prisma.card.findMany({
+			where: {
+				isDiscover: true,
+				isAvailable: true,
+				deletedAt: null,
+				expiration: {
+					gt: new Date()
+				}
+			}
+		})
+	]);
+
+	return {...cardsByCategory, hot: hotCards, discover: discoverCards}
+		
+	} catch (error) {
+		if (error instanceof ApiError) throw error;
+		throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, `Failed to fetch cards preview homepage: ${error.message}`);
+	}
 }
