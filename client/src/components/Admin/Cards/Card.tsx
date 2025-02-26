@@ -71,7 +71,7 @@ const CardComponent: React.FC<CardComponentProps> = (props) => {
 
   // Regular card with image and info
   const card = props.card;
-  const { onEdit, onClick } = props;
+  const { onEdit } = props;
 
   const handleEditClick = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -84,10 +84,8 @@ const CardComponent: React.FC<CardComponentProps> = (props) => {
 
   const handleCardClick = () => {
     // Set the current card when clicked
+    console.log(card)
     handleSelectCard(card);
-    if (onClick) {
-      onClick(card.id);
-    }
   };
 
   // Badge component for statuses

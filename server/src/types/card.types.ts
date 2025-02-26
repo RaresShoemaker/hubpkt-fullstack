@@ -17,7 +17,7 @@ export interface CreateCardInput {
 export type UpdateCardInput = Partial<
     Omit<
         Prisma.CardUpdateInput,
-        'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'image' | 'imageMetadata' | 'category' | 'createdBy'
+        'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'image' | 'createdBy'
     >
 >;
 

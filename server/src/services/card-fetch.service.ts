@@ -422,8 +422,8 @@ export const getCardsPreviewHomepage = async () => {
 			}
 		}
 	))
-	const cardsByCategory = cards.reduceRight((acc: Record<string, any>, item) => {
-		acc[item.categoryId] = item.cards;
+	const cardsByCategory = cards.reduce((acc: Record<string, any>, item) => {
+		acc[item.categoryTitle] = item.cards;
 		return acc;
 	}, {} as Record<string, any>);
 
@@ -436,6 +436,9 @@ export const getCardsPreviewHomepage = async () => {
 				expiration: {
 					gt: new Date()
 				}
+			},
+			omit: {
+				order: true,
 			}
 		}),
 		prisma.card.findMany({
@@ -446,6 +449,9 @@ export const getCardsPreviewHomepage = async () => {
 				expiration: {
 					gt: new Date()
 				}
+			},
+			omit: {
+				order: true,
 			}
 		})
 	]);

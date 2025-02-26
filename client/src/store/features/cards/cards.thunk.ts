@@ -42,7 +42,6 @@ export const updateCard = createAsyncThunk(
           'Content-Type': 'multipart/form-data'
         }
       };
-
       const response = await api.put(API_ENDPOINTS.cards.update(data.id), data, config);
       return response.data;
     } catch (error: any) {
@@ -339,8 +338,8 @@ export const fetchHomeCards = createAsyncThunk(
   'cards/fetchHome',
   async ( _,{ rejectWithValue }) => {
     try {
-      const response = await api.get<CardResponse>(API_ENDPOINTS.cards.getHomeCards);
-      return response.data;
+      const response = await api.get(API_ENDPOINTS.cards.getHomeCards);
+      return response.data.data;
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || 'An error occurred while fetching home cards'

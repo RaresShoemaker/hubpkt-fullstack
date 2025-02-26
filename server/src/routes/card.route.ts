@@ -29,7 +29,7 @@ router.patch('/:id/order', verifyAuth, CardController.updateCardOrder);
 router.post('/reorder', verifyAuth, CardController.reorderCards);
 router.delete('/:id', verifyAuth, CardController.deleteCard);
 
-router.get('/home', CardController.getCardsHomepage);
+router.get('/home/test', CardController.getCardsHomepage);
 
 router.get('/filter/filtered', verifyAuth, CardController.getFilteredCards);
 router.get('/filter/hot', verifyAuth, CardController.getHotCards);

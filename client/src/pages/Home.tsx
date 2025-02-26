@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import CategoryOverviewLayout from '../layouts/CategoryOverviewLayout';
 import CategoryContainer from '../components/Category/CategoryContainer';
@@ -6,10 +6,21 @@ import { CategoryData } from '../mockdata/CategoryMockData';
 import SEO from '../components/SEO';
 import PachetHubLogo from '../assets/PacketaShareLink.png';
 import PktHubLogoStacked from '../assets/PktHubLogoStacked.png';
+import { useCards } from '../store/features/cards/useCards';
 
 const Home: React.FC = () => {
 	const [searchParams] = useSearchParams();
 	const category = React.useMemo(() => searchParams.get('category'), [searchParams]);
+	const { handleFetchHomeCards } = useCards()
+
+	useEffect(() => {
+		const getHomeCards = async () => {
+			await handleFetchHomeCards()
+		}
+		getHomeCards()
+	}
+	, [handleFetchHomeCards])
+
 
 	const categoryData = React.useMemo(() => {
 		if (category && CategoryData[category]) {

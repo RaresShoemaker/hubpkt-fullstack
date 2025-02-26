@@ -138,7 +138,7 @@ const cardsSlice = createSlice({
     })
     .addCase(fetchHomeCards.fulfilled, (state, action) => {
       state.operations.fetchHomeCards.isLoading = false;
-      state.cards = action.payload.cards;
+      state.cards = action.payload;
     })
     .addCase(fetchCardsByCategory.pending, (state) => {
       state.operations.fetchCardsByCategory.isLoading = true;
