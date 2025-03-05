@@ -20,6 +20,8 @@ export async function createCategory(data: CategoryTypes.CreateCategoryInput, im
 				title: data.title,
 				hasPreview: data.hasPreview,
 				isAvailable: data.isAvailable,
+				previewTitle: data.previewTitle,
+				hasSquareContent: data.hasSquareContent,
 				order: data.order,
 				image: url,
 				imageMetadata: {
@@ -158,6 +160,29 @@ export async function listCategories(params: {
 	};
 }
 
+export const fetchClientCategories = async () => {
+	try {
+		const categories = await prisma.category.findMany({
+			where: {
+				isAvailable: true
+			},
+			orderBy: {
+				order: 'asc'
+			},
+			omit: {
+				createdAt: true,
+				userId: true,
+				updatedAt: true,
+				imageMetadataId: true
+			}
+		});
+		return categories;
+	} catch (error) {
+		if (error instanceof ApiError) throw error;
+		throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, `Failed to fetch categories: ${error.message}`);
+	}
+}
+
 export async function reorderCategories(orderedCategoryIds: string[]) {
 	try {
 		// Verify all categories exist
@@ -215,6 +240,30 @@ export async function deleteCategory(id: string) {
 		if (!category) {
 			throw new ApiError(StatusCodes.NOT_FOUND, 'Category not found');
 		}
+
+		// First delete the associated cards
+
+		const cards = await prisma.card.findMany({
+      where: { categoryId: id },
+      include: {
+        imageMetadata: true  // Include image metadata if cards have images
+      }
+    });
+
+    // Delete each card and its associated image metadata
+    for (const card of cards) {
+      // Delete card's image metadata if it exists
+      if (card.imageMetadata) {
+        await prisma.imageMetadata.delete({
+          where: { id: card.imageMetadata.id }
+        });
+      }
+      
+      // Delete the card
+      await prisma.card.delete({
+        where: { id: card.id }
+      });
+    }
 
 		// First, delete the associated image metadata if it exists
 		if (category.imageMetadata) {

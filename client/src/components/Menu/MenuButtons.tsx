@@ -1,79 +1,91 @@
-import React, { useCallback } from 'react';
+import React from 'react';
 import { cn } from '../../lib/utils';
 import { Link } from 'react-router-dom';
-import { useTransitionAnimation } from '../../context/TransitionAnimationContext/TransitionAnimationContext';
+import { useCategories } from '../../store/features/categories/useCategories';
+import { CategoryIcon } from '../Admin/Navigation/CategoryIcon';
+import { HomeIcon } from '../../assets/icons';
 
-interface MenuButtonProps {
-	title: string;
-	icon: React.ReactNode;
-	query?: string;
-	link?: string;
+// New interface for category data based on the provided structure
+interface CategoryData {
+  id: string;
+  title: string;
+  image: string;
+  order: number;
+  hasPreview: boolean;
+  isAvailable: boolean;
+  previewTitle?: string;
+  hasSquareContent: boolean;
 }
 
-const MenuButton: React.FC<MenuButtonProps> = ({ title, icon, query, link = '' }) => {
-	const { category } = useTransitionAnimation();
+// Predefined menu item types
+type PredefinedMenuType = 'home' | 'category';
 
-	const isSelected = category === "" ? query === 'home' : category === query;
+interface MenuButtonProps {
+  // Either use a predefined type or a regular category
+  predefined?: PredefinedMenuType;
+  category?: CategoryData;
+  link?: string;
+  customTitle?: string;
+}
 
-	const getImagesByCategory = useCallback((category: string | null): string[] => {
-		switch (category) {
-			case 'home':
-				return ['/Home1.jpg', '/Home2.jpg', '/Home3.jpg'];
-			case 'media':
-				return ['/Media1.jpg', '/Media2.jpg', '/Media3.jpg'];
-			case 'music':
-				return ['/Music1.jpg', '/Music2.jpg', '/Music3.jpg'];
-			case 'games':
-				return ['/Games1.jpg', '/Games2.jpg', '/Games3.jpg'];
-			case 'casino':
-				return ['/Casino1.jpg', '/Casino2.jpg', '/Casino3.jpg', '/Casino4.jpg'];
-			case 'technology':
-				return ['/Technology1.jpg', '/Technology2.jpg', '/Technology3.jpg'];
-			default:
-				return ['/Home1.jpg', '/Home2.jpg', '/Home3.jpg'];
-		}
-	}, []);
+const MenuButton: React.FC<MenuButtonProps> = ({ 
+  predefined, 
+  category, 
+  link = '', 
+  customTitle 
+}) => {
+  const { clientCategory, changeClientCategory } = useCategories();
 
-	const handleMouseEnter = useCallback(() => {
-		if (!query) return;
+  // Handle predefined menu items
+  if (predefined === 'home') {
+    const isSelected = clientCategory === null;
+    
+    return (
+      <Link to="/" onClick={() => changeClientCategory(null)}>
+        <div
+          className={cn(
+            'w-full rounded-lg text-white flex gap-2 items-center p-2',
+            isSelected && 'bg-white/10 rounded-2xl'
+          )}
+        >
+          <div className="h-8 w-8 flex items-center justify-center">
+            <HomeIcon />
+          </div>
+          <p>Packet Hub</p>
+        </div>
+      </Link>
+    );
+  }
 
-		const images = getImagesByCategory(query);
+  // For regular category items
+  if (category) {
+    // Check if this category is selected
+    const isSelected = clientCategory?.id === category.id;
 
-		// Preload images using both Image object and link preload
-		images.forEach((src) => {
-			// Method 1: Create new Image object
-			const img = new Image();
-			img.src = src;
+    return (
+      <Link 
+        to={link ? link : `/?category=${category.title.toLocaleLowerCase()}`}
+        onClick={() => changeClientCategory(category)}
+      >
+        <div
+          className={cn(
+            'w-full rounded-lg text-white flex gap-2 items-center p-2',
+            isSelected && 'bg-white/10 rounded-2xl [&_rect.icon-bg]:fill-white/50 [&_#icon-bg]:fill-opacity-100'
+          )}
+        >
+          <CategoryIcon 
+            title={category.title} 
+            image={category.image} 
+            size="custom" 
+            customSize='h-8 w-8'
+          />
+          <p>{customTitle || category.previewTitle || category.title}</p>
+        </div>
+      </Link>
+    );
+  }
 
-			// Method 2: Add preload link
-			const link = document.createElement('link');
-			link.rel = 'preload';
-			link.as = 'image';
-			link.href = src;
-
-			// Remove existing preload link for this image if it exists
-			const existingLink = document.head.querySelector(`link[href="${src}"]`);
-			if (existingLink) {
-				document.head.removeChild(existingLink);
-			}
-
-			document.head.appendChild(link);
-		});
-	}, [query, getImagesByCategory]);
-
-	return (
-		<Link to={link ? link :  `/?category=${query}`} onMouseEnter={handleMouseEnter}>
-			<div
-				className={cn(
-					'w-full rounded-lg text-white flex gap-2 items-center p-2',
-					isSelected && 'bg-white/10 rounded-2xl [&_rect.icon-bg]:fill-white/50 [&_#icon-bg]:fill-opacity-100'
-				)}
-			>
-				{icon}
-				<p>{title}</p>
-			</div>
-		</Link>
-	);
+  return null; // Return null if neither predefined nor category is provided
 };
 
 export default MenuButton;

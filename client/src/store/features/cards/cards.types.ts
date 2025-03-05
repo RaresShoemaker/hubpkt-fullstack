@@ -12,6 +12,7 @@ export interface Card {
   expiration?: Date;
   isAvailable: boolean;
   userId: string;
+  href: string;
   categoryId: string;
   createdAt: Date;
   updatedAt: Date;
@@ -19,6 +20,7 @@ export interface Card {
   isDiscover: boolean;
   isHot: boolean;
   isPreview: boolean;
+  isSquare: boolean;
 }
 
 export interface AffectedCard {
@@ -27,8 +29,20 @@ export interface AffectedCard {
   newOrder: number;
 }
 
+export interface CategoryData {
+  categoryId: string;
+  previewTitle: string;
+  hasSquareContent: boolean;
+  data: Card[];
+}
+
+export interface HomeCards {
+  [category: string]: CategoryData;
+}
+
 export interface InitialState {
   cards: Card[],
+  homeCards: HomeCards
   total: number,
   currentCard: Card | null,
   operations: {
@@ -100,6 +114,8 @@ export interface CreateCardRequest {
   title: string;
   description?: string;
   image: File;
+  href: string;
+  isSquare: boolean;
   isAvailable?: boolean;
   isHot?: boolean;
   isDiscover?: boolean;
@@ -123,6 +139,8 @@ export interface UpdateCardRequest {
   genre?: string;
   expiration?: Date | string;
   order?: number;
+  href?: string;
+  isSquare?: boolean;
 }
 
 export interface UpdateCardOrderPayload {

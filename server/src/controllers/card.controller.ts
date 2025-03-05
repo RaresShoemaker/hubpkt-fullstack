@@ -7,7 +7,7 @@ import catchAsync from '../utils/catchAsync';
 // Helper function to convert string boolean values to actual booleans
 const convertBooleanFields = (data: any) => {
     // List of fields that should be boolean type
-    const booleanFields = ['isAvailable', 'isHot', 'isDiscover', 'isPreview'];
+    const booleanFields = ['isAvailable', 'isHot', 'isDiscover', 'isPreview', 'isSquare'];
     
     // Create a new object with converted boolean values
     const result = { ...data };

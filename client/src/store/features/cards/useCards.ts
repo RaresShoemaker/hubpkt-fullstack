@@ -29,7 +29,7 @@ import {
 
 export const useCards = () => {
   const dispatch = useAppDispatch();
-  const { cards, total, currentCard, operations } = useAppSelector((state) => state.cards);
+  const { cards, total, currentCard, operations, homeCards } = useAppSelector((state) => state.cards);
 
   // Action creators
   const handleCreateCard = useCallback(
@@ -124,13 +124,12 @@ export const useCards = () => {
     [dispatch]
   );
 
-  // Return all the necessary state and methods
   return {
-    // State
     cards,
     total,
     currentCard,
     operations,
+    homeCards,
 
     loading: {
       createCard: operations.create.isLoading,

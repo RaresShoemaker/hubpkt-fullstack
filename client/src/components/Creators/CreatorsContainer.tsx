@@ -1,13 +1,13 @@
 import React from 'react';
-import { CreatorsCardDataType } from '../../mockdata/CreatorsMockData';
-import CreatorsCard from './CreatorsCard';
-
+// import { CreatorsCardDataType } from '../../mockdata/CreatorsMockData';
+// import CreatorsCard from './CreatorsCard';
 interface CreatorsCategoryContainerProps {
 	title: string;
-	cards: CreatorsCardDataType[];
+	// cards: CreatorsCardDataType[] | any;
+
 }
 
-const CreatorsCategoryContainer: React.FC<CreatorsCategoryContainerProps> = React.memo(({ title, cards }) => {
+const CreatorsCategoryContainer: React.FC<CreatorsCategoryContainerProps> = React.memo(({ title }) => {
 	return (
 		<div className='flex flex-col gap-4 w-full md:pr-0'>
 			{/* Title section */}
@@ -19,11 +19,11 @@ const CreatorsCategoryContainer: React.FC<CreatorsCategoryContainerProps> = Reac
 			<div className='w-full'>
 				<div className='max-w-full overflow-x-auto no-scrollbar'>
 					<div className='inline-flex gap-4'>
-						{cards.map((card, index) => (
+						{/* {cards.map((card, index) => (
 							<div key={index} className='shrink-0'>
 								<CreatorsCard {...card} />
 							</div>
-						))}
+						))} */}
 						<div className='h-60 w-4'></div>
 					</div>
 				</div>

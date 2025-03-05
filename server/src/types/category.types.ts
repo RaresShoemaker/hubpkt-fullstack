@@ -6,6 +6,8 @@ export interface CreateCategoryInput {
   isAvailable?: boolean;
   order: number;
   userId: string;
+  previewTitle?: string;
+  hasSquareContent?: boolean;
 }
 
 export type UpdateCategoryInput = Partial<

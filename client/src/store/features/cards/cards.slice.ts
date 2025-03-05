@@ -13,6 +13,7 @@ import {
 
 const initialState: InitialState = {
   cards: [],
+  homeCards: {},
   total: 0,
   currentCard: null,
   operations: {
@@ -138,7 +139,7 @@ const cardsSlice = createSlice({
     })
     .addCase(fetchHomeCards.fulfilled, (state, action) => {
       state.operations.fetchHomeCards.isLoading = false;
-      state.cards = action.payload;
+      state.homeCards = action.payload;
     })
     .addCase(fetchCardsByCategory.pending, (state) => {
       state.operations.fetchCardsByCategory.isLoading = true;

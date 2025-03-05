@@ -3,7 +3,6 @@ import { prisma } from '../db/prisma-client';
 import { StatusCodes } from 'http-status-codes';
 import ApiError from '../utils/ApiError';
 import { CardTypes } from '@/types';
-import { CategoryServices } from './index';
 
 export async function getCard(id: string) {
 	const card = await prisma.card.findUnique({
@@ -386,80 +385,110 @@ function buildQueryParams(options: CardTypes.CardFilterOptions) {
 
 
 export const getCardsPreviewHomepage = async () => {
-	try {	
-		const categories = await prisma.category.findMany({
-			where: {
-				isAvailable: true,
-				hasPreview: true,
-			},
-			orderBy: {
-				order: 'asc'
-			}
-		})
+  try {    
+    const categories = await prisma.category.findMany({
+      where: {
+        isAvailable: true,
+        hasPreview: true,
+      },
+      orderBy: {
+        order: 'asc'
+      }
+    });
 
-		const cards = await Promise.all(categories.map(async ({id, title}) => {
-			const currentTime = new Date();
+    const cards = await Promise.all(categories.map(async ({id, title, previewTitle, hasSquareContent}) => {
+      const currentTime = new Date();
 
-			const cards = await prisma.card.findMany({
-				where: {
-					categoryId: id,
-					isPreview: true,
-					isAvailable: true,
-					deletedAt: null,
-					expiration: {
-						gt: currentTime
-					}
+      const cards = await prisma.card.findMany({
+        where: {
+          categoryId: id,
+          isPreview: true,
+          isAvailable: true,
+          deletedAt: null,
+					OR: [
+            { expiration: { gt: currentTime } },
+            { expiration: null }
+          ]
+        },
+        orderBy: {
+          order: 'asc'
+        },
+      });
+
+      return {
+        categoryTitle: title,
+        previewTitle: previewTitle,
+        categoryId: id,
+        hasSquareContent, // Consistent naming
+        cards
+      };
+    }));
+
+    const cardsByCategory = cards.reduce((acc: Record<string, any>, item) => {
+      acc[item.categoryTitle.toLowerCase()] = {
+        categoryId: item.categoryId,
+        previewTitle: item.previewTitle === '' ? item.categoryTitle : item.previewTitle,
+        hasSquareContent: item.hasSquareContent, // Now properly referenced
+        data: item.cards,
+      };
+      return acc;
+    }, {} as Record<string, any>);
+
+    const [hotCards, discoverCards] = await Promise.all([
+      prisma.card.findMany({
+        where: {
+          isHot: true,
+          isAvailable: true,
+          deletedAt: null,
+          OR: [
+            { expiration: { gt: new Date() } },
+            { expiration: null }
+          ]
+        },
+				orderBy:{ 
+					id: Math.random() > 0.5 ? 'asc' : 'desc'
 				},
-				orderBy: {
-					order: 'asc'
+				omit: {
+					order: true
+				}
+        // Removed the invalid "omit" option
+      }),
+      prisma.card.findMany({
+        where: {
+          isDiscover: true,
+          isAvailable: true,
+          deletedAt: null,
+          OR: [
+            { expiration: { gt: new Date() } },
+            { expiration: null }
+          ],
+        },
+				orderBy:{ 
+					id: Math.random() > 0.5 ? 'asc' : 'desc'
 				},
-			})
-
-			return {
-				categoryTitle: title,
-				categoryId: id,
-				cards: cards
-			}
-		}
-	))
-	const cardsByCategory = cards.reduce((acc: Record<string, any>, item) => {
-		acc[item.categoryTitle] = item.cards;
-		return acc;
-	}, {} as Record<string, any>);
-
-	const [hotCards, discoverCards] = await Promise.all([
-		prisma.card.findMany({
-			where: {
-				isHot: true,
-				isAvailable: true,
-				deletedAt: null,
-				expiration: {
-					gt: new Date()
+				omit: {
+					order: true
 				}
-			},
-			omit: {
-				order: true,
-			}
-		}),
-		prisma.card.findMany({
-			where: {
-				isDiscover: true,
-				isAvailable: true,
-				deletedAt: null,
-				expiration: {
-					gt: new Date()
-				}
-			},
-			omit: {
-				order: true,
-			}
-		})
-	]);
+        // Removed the invalid "omit" option
+      })
+    ]);
 
-	return {...cardsByCategory, hot: hotCards, discover: discoverCards}
-		
-	} catch (error) {
-		if (error instanceof ApiError) throw error;
-		throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, `Failed to fetch cards preview homepage: ${error.message}`);
-	}
-}
+    return {
+			hot: {
+        categoryId: '',
+        previewTitle: "What's Hot",
+        data: hotCards
+      }, 
+      discover: {
+        categoryId: '',
+        previewTitle: "Discover",
+        data: discoverCards
+      },
+      ...cardsByCategory, 
+    };
+      
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, `Failed to fetch cards preview homepage: ${error.message}`);
+  }
+};

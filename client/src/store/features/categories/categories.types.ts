@@ -3,7 +3,7 @@ export interface ImageMetadata {
   id: string;
   url: string;
   mimeType: string;
-  widht: number;
+  width: number;
   height: number;
 }
 
@@ -11,6 +11,7 @@ export interface Category {
   id: string;
   title: string;
   hasPreview: boolean;
+  previewTitle?: string;
   isAvailable: boolean;
   order: number;
   image: string;
@@ -19,13 +20,18 @@ export interface Category {
   updatedAt: string;
   deletedAt?: string;
   createdById: string;
+  hasSquareContent: boolean;
 }
+
+export type CategoryClient = Omit<Category, 'image' | 'imageMetadata' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'createdById'>;
 
 // Request/Response types for API calls
 export interface CreateCategoryRequest {
   title: string;
   hasPreview?: boolean;
+  previewTitle?: string;
   isAvailable?: boolean;
+  hasSquareContent?: boolean;
   order: number;
   userId: string;
   image: File;
@@ -35,6 +41,8 @@ export interface UpdateCategoryRequest {
   id: string;
   title?: string;
   hasPreview?: boolean;
+  previewTitle?: string;
+  hasSquareContent?: boolean;
   isAvailable?: boolean;
   order?: number;
   image?: File;
@@ -57,6 +65,7 @@ export interface CategoryState {
   items: Category[];
   total: number;
   currentCategory: Category | null;
+  clientCategory: CategoryClient | null;
   operations: {
     create: {
       isLoading: boolean;

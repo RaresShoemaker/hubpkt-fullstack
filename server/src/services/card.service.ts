@@ -36,6 +36,8 @@ export const createCard = async (data: CardTypes.CreateCardInput, imageBuffer: B
 				isHot: data.isHot,
 				isDiscover: data.isDiscover,
 				isPreview: data.isPreview,
+				href: data.href,
+				isSquare: data.isSquare,
 				image: url,
 				imageMetadata: {
 					connect: {
@@ -112,7 +114,8 @@ export const updateCard = async (
 			}
 		}
 
-		const newCardData: Prisma.CardUpdateInput = { ...data };
+		const { categoryId, ...cleanData } = data;
+		const newCardData: Prisma.CardUpdateInput = { ...cleanData };
 
 		if (imageUrl) {
 			newCardData.image = imageUrl;
@@ -129,7 +132,6 @@ export const updateCard = async (
 			data: newCardData,
 			include: {
 				imageMetadata: true,
-				category: true
 			}
 		});
 
@@ -203,11 +205,9 @@ export const updateCardOrder = async (cardId: string, newOrder: number, category
 			throw new ApiError(StatusCodes.NOT_FOUND, 'Card not found');
 		}
 
-		let affectedCards: { id: string; previousOrder: number; newOrder: number; }[] = [];
-
+		let affectedCards: { id: string; previousOrder: number; newOrder: number }[] = [];
 
 		if (newOrder > card.order) {
-
 			const cardsToShift = await prisma.card.findMany({
 				where: {
 					categoryId,
@@ -222,12 +222,12 @@ export const updateCardOrder = async (cardId: string, newOrder: number, category
 				}
 			});
 
-			affectedCards = cardsToShift.map(c => {
+			affectedCards = cardsToShift.map((c) => {
 				return {
 					id: c.id,
 					previousOrder: c.order,
 					newOrder: c.order - 1
-				}
+				};
 			});
 
 			await prisma.$transaction([
@@ -257,7 +257,6 @@ export const updateCardOrder = async (cardId: string, newOrder: number, category
 		}
 
 		if (newOrder < card.order) {
-
 			const cardsToShift = await prisma.card.findMany({
 				where: {
 					categoryId,
@@ -269,10 +268,10 @@ export const updateCardOrder = async (cardId: string, newOrder: number, category
 				select: { id: true, order: true }
 			});
 
-			affectedCards = cardsToShift.map(c => ({ 
-				id: c.id, 
-				previousOrder: c.order, 
-				newOrder: c.order + 1 
+			affectedCards = cardsToShift.map((c) => ({
+				id: c.id,
+				previousOrder: c.order,
+				newOrder: c.order + 1
 			}));
 
 			await prisma.$transaction([
@@ -368,56 +367,56 @@ import { randomInt } from 'crypto';
 
 //This function is handling the reorder of the first 20 cards.
 export const reorderFirstCards = async (categoryId: string, newCardsOrder: string[]) => {
-    try {
-        const allCards = await prisma.card.findMany({
-            where: { categoryId },
-            orderBy: { order: 'asc' }
-        });
+	try {
+		const allCards = await prisma.card.findMany({
+			where: { categoryId },
+			orderBy: { order: 'asc' }
+		});
 
-        const first20Cards = allCards.slice(0, 20);
-        const remainingCards = allCards.slice(20);
+		const first20Cards = allCards.slice(0, 20);
+		const remainingCards = allCards.slice(20);
 
-        if (first20Cards.length !== newCardsOrder.length) {
-            throw new ApiError(
-                StatusCodes.BAD_REQUEST,
-                'Some card IDs are invalid or do not belong to the specified category'
-            );
-        }
+		if (first20Cards.length !== newCardsOrder.length) {
+			throw new ApiError(
+				StatusCodes.BAD_REQUEST,
+				'Some card IDs are invalid or do not belong to the specified category'
+			);
+		}
 
-        await prisma.$transaction([
-            ...newCardsOrder.map((cardId, index) => {
-                return prisma.card.update({
-                    where: { id: cardId },
-                    data: { order: index + 1 }
-                });
-            }),
-            ...remainingCards.map(card => {
-                return prisma.card.update({
-                    where: { id: card.id },
-                    data: { order: randomInt(21, allCards.length + 1) }
-                });
-            })
-        ]);
+		await prisma.$transaction([
+			...newCardsOrder.map((cardId, index) => {
+				return prisma.card.update({
+					where: { id: cardId },
+					data: { order: index + 1 }
+				});
+			}),
+			...remainingCards.map((card) => {
+				return prisma.card.update({
+					where: { id: card.id },
+					data: { order: randomInt(21, allCards.length + 1) }
+				});
+			})
+		]);
 
-        // Ensure no conflicts by reordering any cards that might have been assigned an order within the first 20
-        const updatedRemainingCards = await prisma.card.findMany({
-            where: {
-                categoryId,
-                order: { gte: 21 }
-            },
-            orderBy: { order: 'asc' }
-        });
+		// Ensure no conflicts by reordering any cards that might have been assigned an order within the first 20
+		const updatedRemainingCards = await prisma.card.findMany({
+			where: {
+				categoryId,
+				order: { gte: 21 }
+			},
+			orderBy: { order: 'asc' }
+		});
 
-        await prisma.$transaction(
-            updatedRemainingCards.map((card, index) => {
-                return prisma.card.update({
-                    where: { id: card.id },
-                    data: { order: 21 + index }
-                });
-            })
-        );
-    } catch (error) {
-        if (error instanceof ApiError) throw error;
-        throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, `Failed to reorder cards: ${error.message}`);
-    }
+		await prisma.$transaction(
+			updatedRemainingCards.map((card, index) => {
+				return prisma.card.update({
+					where: { id: card.id },
+					data: { order: 21 + index }
+				});
+			})
+		);
+	} catch (error) {
+		if (error instanceof ApiError) throw error;
+		throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, `Failed to reorder cards: ${error.message}`);
+	}
 };

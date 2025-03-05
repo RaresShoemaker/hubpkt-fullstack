@@ -1,10 +1,11 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Category, CategoryState } from './categories.types';
+import { Category, CategoryState, CategoryClient } from './categories.types';
 import {
 	createCategory,
 	deleteCategory,
 	fetchCategories,
 	fetchCategory,
+	fetchClientCategories,
 	reorderCategories,
 	updateCategory
 } from './categories.thunk';
@@ -13,6 +14,7 @@ const initialState: CategoryState = {
 	items: [],
 	total: 0,
 	currentCategory: null,
+	clientCategory: null,
 	operations: {
 		create: {
 			isLoading: false,
@@ -56,6 +58,9 @@ const categoriesSlice = createSlice({
 		},
 		selectCategory: (state, action: PayloadAction<Category | null>) => {
 			state.currentCategory = action.payload;
+		},
+		selectClientCategory: (state, action: PayloadAction<CategoryClient | null>) => {
+			state.clientCategory = action.payload
 		}
 	},
 	extraReducers: (builder) => {
@@ -139,9 +144,24 @@ const categoriesSlice = createSlice({
 			.addCase(reorderCategories.rejected, (state, action) => {
 				state.operations.reorder.isLoading = false;
 				state.operations.reorder.error = action.payload as string;
-			});
+			})
+			.addCase(fetchClientCategories.pending, (state) => {
+				state.operations.fetch.isLoading = true;
+				state.operations.fetch.error = null;
+			})
+			.addCase(fetchClientCategories.fulfilled, (state, action) => {
+				state.operations.fetch.isLoading = false;
+				state.items = action.payload;
+				state.total = action.payload.length;
+			})
+			.addCase(fetchClientCategories.rejected, (state, action) => {
+				state.operations.fetch.isLoading = false;
+				state.operations.fetch.error = action.payload as string;
+			}
+		);
+
 	}
 });
 
-export const { clearErrors, selectCategory } = categoriesSlice.actions;
+export const { clearErrors, selectCategory, selectClientCategory } = categoriesSlice.actions;
 export default categoriesSlice.reducer;

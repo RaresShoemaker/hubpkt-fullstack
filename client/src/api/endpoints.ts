@@ -13,6 +13,7 @@ export const API_ENDPOINTS = {
     updateOrder: (id: string) => `/categories/${id}/order`,
     reorder: '/categories/reorder',
     delete: (id: string) => `/categories/${id}`,
+    clientCategories: '/categories/category/client',
   },
   cards: {
     // Basic CRUD endpoints
