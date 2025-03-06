@@ -48,7 +48,7 @@ const MenuButton: React.FC<MenuButtonProps> = ({
             isSelected && 'bg-white/10 rounded-2xl'
           )}
         >
-          <div className="h-8 w-8 flex items-center justify-center">
+          <div className="h-10 w-10 flex items-center justify-center">
             <HomeIcon />
           </div>
           <p>Packet Hub</p>
@@ -77,7 +77,7 @@ const MenuButton: React.FC<MenuButtonProps> = ({
             title={category.title} 
             image={category.image} 
             size="custom" 
-            customSize='h-8 w-8'
+            customSize='h-10 w-10'
           />
           <p>{customTitle || category.previewTitle || category.title}</p>
         </div>

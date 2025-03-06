@@ -574,3 +574,9 @@ export const getCardsWithRandomizedOrder = async (req: Request, res: Response): 
         }
     }
 };
+
+export const getCreatorsCards = catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const cards = await CardServiceFetch.getOrganizedCards(id);
+    res.status(StatusCodes.OK).json({data: cards});
+})

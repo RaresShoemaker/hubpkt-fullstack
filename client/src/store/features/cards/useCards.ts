@@ -16,7 +16,8 @@ import {
   fetchActiveCards,
   fetchCardsWithRandomizedOrder,
   reorderCards,
-  fetchCard
+  fetchCard,
+  fetchCreatorsCards
 } from './cards.thunk';
 import { selectCard, clearErrors } from './cards.slice';
 import { 
@@ -29,7 +30,7 @@ import {
 
 export const useCards = () => {
   const dispatch = useAppDispatch();
-  const { cards, total, currentCard, operations, homeCards } = useAppSelector((state) => state.cards);
+  const { cards, total, currentCard, operations, homeCards, creatorsCards } = useAppSelector((state) => state.cards);
 
   // Action creators
   const handleCreateCard = useCallback(
@@ -61,6 +62,10 @@ export const useCards = () => {
     (params?: CardFilterParams) => dispatch(fetchFilteredCards(params || {})),
     [dispatch]
   );
+
+  const handleFetchCreatorsCards = useCallback((categoryId: string) => {
+    dispatch(fetchCreatorsCards(categoryId));
+  }, [dispatch]);
 
   const handleFetchHomeCards = useCallback(
     () => dispatch(fetchHomeCards()),
@@ -130,6 +135,7 @@ export const useCards = () => {
     currentCard,
     operations,
     homeCards,
+    creatorsCards,
 
     loading: {
       createCard: operations.create.isLoading,
@@ -168,6 +174,7 @@ export const useCards = () => {
     handleFetchActiveCards,
     handleFetchRandomizedCards,
     handleUpdateCardOrder,
+    handleFetchCreatorsCards,
     handleReorderCards,
     handleSelectCard,
     handleClearErrors

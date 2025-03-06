@@ -26,7 +26,7 @@ const MenuCategory: React.FC = () => {
 				<MenuButton predefined='home' />
 				{items.map((item) => {
 					return (
-						<MenuButton key={item.id} category={item} />
+						<MenuButton key={item.id} category={item} link={item.title.includes('Creator') ? '/creatorshub' : undefined} />
 					);
 				})}
 			</div>

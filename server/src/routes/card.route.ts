@@ -29,14 +29,15 @@ router.patch('/:id/order', verifyAuth, CardController.updateCardOrder);
 router.post('/reorder', verifyAuth, CardController.reorderCards);
 router.delete('/:id', verifyAuth, CardController.deleteCard);
 
-router.get('/home/test', CardController.getCardsHomepage);
+router.get('/home/cards', CardController.getCardsHomepage);
+router.get('/creator/cards/:id', CardController.getCreatorsCards)
 
-router.get('/filter/filtered', verifyAuth, CardController.getFilteredCards);
+router.get('/filter/filtered', CardController.getFilteredCards);
 router.get('/filter/hot', verifyAuth, CardController.getHotCards);
 router.get('/filter/discover', verifyAuth, CardController.getDiscoverCards);
 router.get('/filter/available', verifyAuth, CardController.getAvailableCards);
 router.get('/filter/active', verifyAuth, CardController.getActiveCards);
-router.get('/filter/randomized', verifyAuth, CardController.getCardsWithRandomizedOrder);
-router.get('/filter/category/:categoryId', verifyAuth, CardController.getCardsByCategory);
+router.get('/filter/randomized', CardController.getCardsWithRandomizedOrder);
+router.get('/filter/category/:categoryId', CardController.getCardsByCategory);
 
 export default router;

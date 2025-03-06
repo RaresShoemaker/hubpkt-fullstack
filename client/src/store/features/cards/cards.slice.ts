@@ -9,11 +9,14 @@ import {
   fetchAvailableCards,
   updateCard,
   updateCardOrder,
+  fetchFilteredCards,
+  fetchCreatorsCards,
 } from './cards.thunk';
 
 const initialState: InitialState = {
   cards: [],
   homeCards: {},
+  creatorsCards: {},
   total: 0,
   currentCard: null,
   operations: {
@@ -65,10 +68,10 @@ const cardsSlice = createSlice({
   initialState,
   reducers: {
     clearErrors: (state) => {
-			Object.keys(state.operations).forEach((key) => {
-				state.operations[key as keyof typeof state.operations].error = null;
-			});
-		},
+      Object.keys(state.operations).forEach((key) => {
+        state.operations[key as keyof typeof state.operations].error = null;
+      });
+    },
     selectCard: (state, action) => {
       state.currentCard = action.payload;
     }
@@ -165,6 +168,31 @@ const cardsSlice = createSlice({
       state.operations.fetchAvailableCards.isLoading = false;
       state.cards = action.payload.cards;
     })
+    .addCase(fetchFilteredCards.pending, (state) => {
+      state.operations.fetchFilteredCards.isLoading = true;
+      state.operations.fetchFilteredCards.error = null;
+    })
+    .addCase(fetchFilteredCards.rejected, (state, action) => {
+      state.operations.fetchFilteredCards.isLoading = false;
+      state.operations.fetchFilteredCards.error = action.payload as string;
+    })
+    .addCase(fetchFilteredCards.fulfilled, (state, action) => {
+      state.operations.fetchFilteredCards.isLoading = false;
+      state.cards = action.payload.cards;
+      state.total = action.payload.total;
+    })
+    .addCase(fetchCreatorsCards.pending, (state) => {
+      state.operations.fetchFilteredCards.isLoading = true;
+      state.operations.fetchFilteredCards.error = null;
+    })
+    .addCase(fetchCreatorsCards.rejected, (state, action) => {
+      state.operations.fetchFilteredCards.isLoading = false;
+      state.operations.fetchFilteredCards.error = action.payload as string;
+    })
+    .addCase(fetchCreatorsCards.fulfilled, (state, action) => {
+      state.operations.fetchFilteredCards.isLoading = false;
+      state.creatorsCards = action.payload.data;
+    })
     .addCase(updateCardOrder.pending, (state) => {
       state.operations.updateCardOrder.isLoading = true;
       state.operations.updateCardOrder.error = null;
@@ -189,10 +217,7 @@ const cardsSlice = createSlice({
       
       state.operations.updateCardOrder.isLoading = false;
     })
-    // to add card reorder logic
   },
-
-
 });
 
 export const { clearErrors, selectCard } = cardsSlice.actions;

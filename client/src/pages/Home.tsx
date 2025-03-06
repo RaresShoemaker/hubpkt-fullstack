@@ -6,20 +6,77 @@ import SEO from '../components/SEO';
 import PachetHubLogo from '../assets/PacketaShareLink.png';
 import PktHubLogoStacked from '../assets/PktHubLogoStacked.png';
 import { useCards } from '../store/features/cards/useCards';
+import { useCategories } from '../store/features/categories/useCategories';
 
 const Home: React.FC = () => {
-  const { handleFetchHomeCards, homeCards } = useCards();
+  const { 
+    handleFetchHomeCards, 
+    handleFetchFilteredCards, 
+    homeCards, 
+    cards,
+    operations 
+  } = useCards();
+  
+  const { clientCategory } = useCategories();
   const [searchParams] = useSearchParams();
   const categoryParam = searchParams.get('category')?.toLowerCase();
 
-  useEffect(() => {
-    const getHomeCards = async () => {
-      await handleFetchHomeCards();
-    };
-    getHomeCards();
-  }, [handleFetchHomeCards]);
+  console.log(homeCards);
 
-  // If cards are still loading or not available
+  // Determine loading states from operations
+  const isLoadingHomeCards = operations.fetchHomeCards.isLoading;
+  const isLoadingFilteredCards = operations.fetchFilteredCards.isLoading;
+
+  useEffect(() => {
+    if (clientCategory) {
+      handleFetchFilteredCards({
+        categoryId: clientCategory.id,
+        isAvailable: true,
+        take: 150
+      });
+    } else {
+      handleFetchHomeCards();
+    }
+  }, [handleFetchHomeCards, handleFetchFilteredCards, clientCategory]);
+
+  // Loading state
+  if ((clientCategory && isLoadingFilteredCards) || (!clientCategory && isLoadingHomeCards)) {
+    return (
+      <CategoryOverviewLayout>
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+        </div>
+      </CategoryOverviewLayout>
+    );
+  }
+
+  // For client category view using filtered cards
+  if (clientCategory && cards && cards.length > 0) {
+    // Get category name from the first card or use clientCategory
+    const categoryTitle = clientCategory.title;
+    
+    return (
+      <>
+        <SEO
+          title={`${categoryTitle} - Packet Hub`}
+          description={`Browse ${categoryTitle} on Packet Hub`}
+          keywords={`Packet Hub, ${categoryTitle}`}
+          url={`https://hub.pkt.cash/`}
+          imgSrc={PktHubLogoStacked}
+        />
+        <CategoryOverviewLayout>
+          <CategoryContainer 
+            title={categoryTitle}
+            cards={cards}
+            isFullPage={true}
+            squareView={false}
+          />
+        </CategoryOverviewLayout>
+      </>
+    );
+  }
+
+  // If cards are still not available for home view
   if (!homeCards || Object.keys(homeCards).length === 0) {
     return (
       <CategoryOverviewLayout>
@@ -63,6 +120,7 @@ const Home: React.FC = () => {
     }
   }
 
+  // Default view (home page with all categories)
   return (
     <>
       <SEO

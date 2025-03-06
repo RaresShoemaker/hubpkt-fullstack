@@ -376,3 +376,17 @@ export const fetchCardsWithRandomizedOrder = createAsyncThunk(
     }
   }
 );
+
+export const fetchCreatorsCards = createAsyncThunk(
+  'cards/fetchCreators',
+  async (categoryId:string ,{ rejectWithValue }) => {
+    try {
+      const response = await api.get(`${API_ENDPOINTS.cards.getCreatorsCards}/${categoryId}`);
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || 'An error occurred while fetching creators cards'
+      );
+    }
+  }
+)

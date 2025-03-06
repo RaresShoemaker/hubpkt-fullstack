@@ -164,7 +164,7 @@ export async function fetchFilteredCards(options: CardTypes.CardFilterOptions = 
 				include: {
 					imageMetadata: true,
 					category: true
-				}
+				},
 			})
 		]);
 
@@ -492,3 +492,98 @@ export const getCardsPreviewHomepage = async () => {
     throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, `Failed to fetch cards preview homepage: ${error.message}`);
   }
 };
+
+/**
+ * Organizes cards into dynamic subcategories based on their genres
+ * @param cardsData The raw cards data from the backend
+ * @returns An object with dynamically created subcategories containing filtered cards
+ */
+export function organizeCardsByCategory(cardsData: any) {
+  // Initialize the result as an empty object
+  const categories: Record<string, { title: string, data: any[] }> = {};
+
+  // If we don't have cards data or it's not an array, return empty object
+  if (!cardsData || !cardsData.cards || !Array.isArray(cardsData.cards)) {
+	return categories;
+  }
+
+  // Process each card
+  cardsData.cards.forEach((card: any) => {
+    const genreText = card.genre || '';
+    
+    // Determine the category based on the genre
+    let category = '';
+    
+    // Extract main category from genre (before the & if it exists)
+    if (genreText.includes('&')) {
+      category = genreText.split('&')[0].trim().toLowerCase();
+    } else {
+      category = genreText.toLowerCase();
+    }
+    
+    // Handle special cases or normalize categories
+    switch (category) {
+      case 'film':
+        category = 'film';
+        break;
+      case 'tv':
+        category = 'tv';
+        break;
+      case 'podcasts':
+        category = 'podcast';
+        break;
+      case 'music':
+        category = 'music';
+        break;
+      // Add more mappings as needed
+      default:
+        // For unknown categories, you could create a new one or use a fallback
+        if (!category) {
+          category = 'other';
+        }
+        break;
+    }
+    
+    // Map the card to a standardized format
+    const mappedCard = {
+      alt: `${card.title}-IMG`,
+      title: card.title,
+      image: card.image,
+      description: card.description,
+      href: card.href || '',
+      genre: genreText,
+      id: card.id
+    };
+
+    // Create the category if it doesn't exist yet
+    if (!categories[category]) {
+      // Format the title with proper capitalization
+      const formattedTitle = category.charAt(0).toUpperCase() + category.slice(1);
+      categories[category] = {
+        title: formattedTitle,
+        data: []
+      };
+    }
+    
+    // Add the card to its category
+    categories[category].data.push(mappedCard);
+  });
+
+  return categories;
+}
+
+export async function getOrganizedCards(id:string) {
+  try {
+    const cardsData = await fetchFilteredCards({
+      isAvailable: true,
+			categoryId: id,
+    });
+    
+    const categorizedCards = organizeCardsByCategory(cardsData);
+    
+    return categorizedCards;
+  } catch (error) {
+    console.error("Failed to fetch and organize cards:", error);
+    return {};
+  }
+}

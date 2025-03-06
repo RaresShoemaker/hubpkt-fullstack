@@ -25,7 +25,8 @@ export const API_ENDPOINTS = {
     reorder: '/cards/reorder',
     delete: (id: string) => `/cards/${id}`,
 
-    getHomeCards: '/cards/home/test',
+    getHomeCards: '/cards/home/cards',
+    getCreatorsCards: '/cards/creator/cards',
     
     // Filtering endpoints
     filtered: '/cards/filter/filtered',

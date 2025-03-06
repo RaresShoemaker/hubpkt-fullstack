@@ -20,6 +20,15 @@ const CreatorsCard: React.FC<CreatorsCardProps> = ({
   genre, 
   href 
 }) => {
+
+  const getGenre = (genre:string) => {
+    if (genre.includes('&')) {
+      const arr = genre.split('&');
+        return arr[1]
+    }
+    return genre;
+  }
+
   return (
     <div className='flex flex-col gap-3'>
       {/* Image Container */}
@@ -40,7 +49,7 @@ const CreatorsCard: React.FC<CreatorsCardProps> = ({
         <div className='h-auto min-h-[40px] w-auto md:max-w-64 max-w-48'>
           <p className='text-sm text-gray-100 line-clamp-2'>{description}</p>
         </div>
-        <div>{genre && <p className='text-sm font-semibold text-gray-300 line-clamp-2'>{genre}</p>}</div>
+        <div>{genre && <p className='text-sm font-semibold text-gray-300 line-clamp-2'>{getGenre(genre)}</p>}</div>
       </div>
     </div>
   );

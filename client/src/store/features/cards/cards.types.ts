@@ -40,9 +40,27 @@ export interface HomeCards {
   [category: string]: CategoryData;
 }
 
+export interface CreatorsData {
+  alt: string;
+  description: string;
+  genre: string;
+  href: string;
+  id: string;
+  image: string;
+  title: string;
+}
+
+export interface CreatorsCardDataType {
+  title: string;
+  data: CreatorsData[];
+}
+
+export type CreatorsCards = Record<string, CreatorsCardDataType>
+
 export interface InitialState {
   cards: Card[],
-  homeCards: HomeCards
+  homeCards: HomeCards,
+  creatorsCards: CreatorsCards,
   total: number,
   currentCard: Card | null,
   operations: {
