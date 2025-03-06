@@ -1,46 +1,32 @@
-import React, { useMemo } from 'react';
+import React, { useEffect } from 'react';
 import MenuButton from './MenuButtons';
 import { Link } from 'react-router-dom';
 import CreatorHubLogo from '../../assets/CreatorHubMenuLogo.svg?react';
-// import PacketHubLogo from '../../assets/PacketHubMenuLogo.svg?react';
 import PktTvLogo from '../../assets/PktTvLogo.svg?react';
 import NewsHubLogo from '../../assets/NewsHubLogo.svg?react';
 import { useTransitionAnimation } from '../../context/TransitionAnimationContext/TransitionAnimationContext';
 import { DiscordIcon, TwitterIcon, TelegramIcon } from '../../assets/icons';
-
-import {
-	HomeIcon,
-	MediaIcon,
-	MusicIcon,
-	GamesIcon,
-	CasinoIcon,
-	TechnologyIcon,
-	CreatorsIcon,
-	NewsIcon
-} from '../../assets/icons';
+import { useCategories } from '../../store/features/categories/useCategories';
 
 const MenuCategory: React.FC = () => {
 	const { category } = useTransitionAnimation();
-	const menuItems = useMemo(
-		() => [
-			{ title: 'Packet Hub', icon: <HomeIcon />, query: 'home' },
-			{ title: 'Creator Hub', icon: <CreatorsIcon />, query: 'creators', link: '/creatorhub' },
-			{ title: 'News Hub', icon: <NewsIcon />, query: 'news', link: '/newshub' },
-			{ title: 'Media', icon: <MediaIcon />, query: 'media' },
-			{ title: 'Music', icon: <MusicIcon />, query: 'music' },
-			{ title: 'Games', icon: <GamesIcon />, query: 'games' },
-			{ title: 'Casino', icon: <CasinoIcon />, query: 'casino' },
-			{ title: 'Technology', icon: <TechnologyIcon />, query: 'technology' }
-		],
-		[]
-	);
+	const { items, fetchCategoriesClient } = useCategories();
+
+	useEffect(() => {
+		const getCategories = async () => {
+			await fetchCategoriesClient();
+		}
+		getCategories();
+	}, [fetchCategoriesClient]);
+
 
 	return (
 		<div className='h-full md:hidden lg:w-full rounded-2xl bg-[#1B1B1B] px-4 py-6 lg:flex flex-col justify-between hidden shadow-[0_0_40px_0_rgba(62,74,192,0.24)]'>
 			<div className='flex flex-col gap-4 align-middle	'>
-				{menuItems.map((item, i) => {
+				<MenuButton predefined='home' />
+				{items.map((item) => {
 					return (
-						<MenuButton key={i} title={item.title} icon={item.icon} query={item.query} link={item.link} />
+						<MenuButton key={item.id} category={item} link={item.title.includes('Creator') ? '/creatorshub' : undefined} />
 					);
 				})}
 			</div>

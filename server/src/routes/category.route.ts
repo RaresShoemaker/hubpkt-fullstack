@@ -7,16 +7,16 @@ const router = Router();
 const upload = multer({
 	storage: multer.memoryStorage(),
 	limits: {
-		fileSize: 500 * 1024 // 500KB
+		fileSize: 500 * 1024 * 1024 // 500MB
 	}
 });
 
 router.post('/', verifyAuth, upload.single('image'), CategoryController.createCategory);
 router.patch('/:id', verifyAuth, upload.single('image'), CategoryController.updateCategory);
-router.patch('/:id/order', verifyAuth, CategoryController.updateCategoryOrder);
 router.post('/reorder', verifyAuth, CategoryController.reorderCategories);
 router.get('/', CategoryController.listCategories);
 router.get('/:id', CategoryController.getCategory);
 router.delete('/:id', verifyAuth, CategoryController.deleteCategory);
+router.get('/category/client', CategoryController.fetchClientCategories);
 
 export default router;

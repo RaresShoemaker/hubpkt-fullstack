@@ -30,6 +30,20 @@ export const createCategory = createAsyncThunk(
 	}
 );
 
+export const fetchClientCategories = createAsyncThunk(
+  'categories/activeCategories',
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await api.get(API_ENDPOINTS.categories.clientCategories);
+      return response.data.data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || 'An error occurred while fetching the categories'
+      );
+    }
+  }
+);
+
 export const updateCategory = createAsyncThunk(
 	'categories/update',
 	async (data: UpdateCategoryRequest, { rejectWithValue }) => {

@@ -7,19 +7,24 @@ import {
   deleteCategory,
   fetchCategory,
   reorderCategories,
+  fetchClientCategories
 } from "./categories.thunk";
-import { selectCategory } from "./categories.slice";
+import { selectCategory, selectClientCategory } from "./categories.slice";
 
-import { Category, CreateCategoryRequest, UpdateCategoryRequest } from "./categories.types";
+import { Category, CreateCategoryRequest, UpdateCategoryRequest, CategoryClient } from "./categories.types";
 
 export const useCategories = () => {
   const dispatch = useAppDispatch();
-  const { items, total, currentCategory, operations } = useAppSelector(
+  const { items, total, currentCategory, operations, clientCategory } = useAppSelector(
     (state) => state.categories
   );
 
   const changeCurrentCategory = useCallback((category: Category | null) => {
     dispatch(selectCategory(category));
+  }, [dispatch]);
+
+  const changeClientCategory = useCallback((category: CategoryClient | null) => {
+    dispatch(selectClientCategory(category));
   }, [dispatch]);
 
   const fetchCategoriesList = useCallback(async () => {
@@ -59,6 +64,14 @@ export const useCategories = () => {
     }
   }, [dispatch]);
 
+  const fetchCategoriesClient = useCallback(async () => {
+    try {
+      await dispatch(fetchClientCategories()).unwrap();
+    } catch (error) {
+      console.error("Failed to fetch client categories", error);
+    }
+  }, [dispatch]);
+
   const reorderCategoriesList = useCallback(async (data: string[]) => {
     try {
       await dispatch(reorderCategories(data)).unwrap();
@@ -80,7 +93,9 @@ export const useCategories = () => {
     items,
     total,
     currentCategory,
+    clientCategory,
     operations,
+
     isLoading: {
       list: operations.list.isLoading,
       create: operations.create.isLoading,
@@ -98,11 +113,13 @@ export const useCategories = () => {
       reorder: operations.reorder.error
     },
     fetchCategoriesList,
+    fetchCategoriesClient,
     fetchCategoryById,
     createNewCategory,
     updateExistingCategory,
     reorderCategoriesList,
     deleteCategoryById,
-    changeCurrentCategory
+    changeCurrentCategory,
+    changeClientCategory
   }
 }

@@ -20,7 +20,8 @@ const createCategorySchema = z.object({
   title: z.string().min(2).max(100),
   hasPreview: z.string(),
   isAvailable: z.string(),
-  userId: z.string().uuid()
+  userId: z.string().uuid(),
+  previewTitle: z.string()
 });
 
 // File validation
@@ -59,6 +60,7 @@ export const createCategory = catchAsync(async (req: MulterRequest, res: Respons
       hasPreview: validatedData.hasPreview === "true",
       isAvailable: validatedData.isAvailable === "true",
       userId: validatedData.userId,
+      previewTitle: validatedData.previewTitle,
       order
     },
     req.file.buffer,
@@ -83,7 +85,8 @@ export const updateCategory = catchAsync(async (req: RequestWithFile, res: Respo
     id,
     {...req.body,
       hasPreview: req.body.hasPreview === "true",
-      isAvailable: req.body.isAvailable === "true"
+      isAvailable: req.body.isAvailable === "true",
+      hasSquareContent: req.body.hasSquareContent === "true"
     },
     req.file?.buffer,
     req.file?.originalname
@@ -95,28 +98,11 @@ export const updateCategory = catchAsync(async (req: RequestWithFile, res: Respo
   });
 });
 
-export const updateCategoryOrder = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const { order } = req.body;
-
-  if (typeof order !== "number" || order < 1) {
-    throw new ApiError(StatusCodes.BAD_REQUEST, "Valid order number is required");
-  }
-
-  await CategoryServices.updateCategoryOrder(id, order);
-
-  res.json({
-    status: "success",
-    message: "Category order updated successfully"
-  });
-});
-
 export const reorderCategories = catchAsync(async (req: Request, res: Response) => {
   const schema = z.array(z.string().uuid());
   const categoryIds = schema.parse(req.body);
 
   const categories = await CategoryServices.reorderCategories(categoryIds);
-  console.log(categories);
 
   res.json({
     status: "success",
@@ -170,4 +156,13 @@ export const deleteCategory = catchAsync(async (req: Request, res: Response) => 
   await CategoryServices.deleteCategory(id);
 
   res.status(StatusCodes.NO_CONTENT).send();
+});
+
+export const fetchClientCategories = catchAsync(async (req: Request, res: Response) => {
+  const categories = await CategoryServices.fetchClientCategories();
+
+  res.json({
+    status: "success",
+    data: categories
+  });
 });

@@ -23,7 +23,7 @@ model User {
 
 model Category {
   id           String         @id @default(uuid())
-  title        String
+  title        String         @default("")
   image        String
   imageMetadata ImageMetadata? @relation(fields: [imageMetadataId], references: [id])
   imageMetadataId String?     @unique
@@ -36,6 +36,8 @@ model Category {
   updatedAt    DateTime      @updatedAt
   hasPreview   Boolean       @default(false)
   isAvailable  Boolean       @default(true)
+  previewTitle String        @default("")
+  hasSquareContent Boolean     @default(false)
 
   @@map("categories")
 }
@@ -61,6 +63,8 @@ model Card {
   isHot          Boolean       @default(false)
   isPreview      Boolean       @default(false)
   isDiscover    Boolean       @default(false)
+  href           String       @default("")
+  isSquare       Boolean       @default(false)
 
   @@map("cards")
 }

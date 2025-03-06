@@ -13,8 +13,10 @@ export const API_ENDPOINTS = {
     updateOrder: (id: string) => `/categories/${id}/order`,
     reorder: '/categories/reorder',
     delete: (id: string) => `/categories/${id}`,
+    clientCategories: '/categories/category/client',
   },
   cards: {
+    // Basic CRUD endpoints
     list: '/cards',
     create: '/cards',
     getOne: (id: string) => `/cards/${id}`,
@@ -22,5 +24,17 @@ export const API_ENDPOINTS = {
     updateOrder: (id: string) => `/cards/${id}/order`,
     reorder: '/cards/reorder',
     delete: (id: string) => `/cards/${id}`,
+
+    getHomeCards: '/cards/home/cards',
+    getCreatorsCards: '/cards/creator/cards',
+    
+    // Filtering endpoints
+    filtered: '/cards/filter/filtered',
+    hot: '/cards/filter/hot',
+    discover: '/cards/filter/discover',
+    available: '/cards/filter/available',
+    active: '/cards/filter/active',
+    randomized: '/cards/filter/randomized',
+    byCategory: (categoryId: string) => `/cards/filter/category/${categoryId}`,
   },
 } as const;

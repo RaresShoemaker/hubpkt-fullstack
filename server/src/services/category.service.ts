@@ -4,24 +4,9 @@ import { StatusCodes } from 'http-status-codes';
 import ApiError from '../utils/ApiError';
 import { UploadMediaTypes } from '../types';
 import { createImageMetadata, updateImageMetadata } from './imageMetadata.service';
+import { CategoryTypes } from '../types';
 
-// Types derived from Prisma schema
-interface CreateCategoryInput {
-	title: string;
-	hasPreview?: boolean;
-	isAvailable?: boolean;
-	order: number;
-	userId: string;
-}
-
-type UpdateCategoryInput = Partial<
-	Omit<
-		Prisma.CategoryUpdateInput,
-		'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'image' | 'imageMetadata' | 'cards'
-	>
->;
-
-export async function createCategory(data: CreateCategoryInput, imageBuffer: Buffer, fileName: string) {
+export async function createCategory(data: CategoryTypes.CreateCategoryInput, imageBuffer: Buffer, fileName: string) {
 	try {
 		// Create image metadata and upload image
 		const { imageMetadata, url } = await createImageMetadata(imageBuffer, fileName, {
@@ -35,6 +20,8 @@ export async function createCategory(data: CreateCategoryInput, imageBuffer: Buf
 				title: data.title,
 				hasPreview: data.hasPreview,
 				isAvailable: data.isAvailable,
+				previewTitle: data.previewTitle,
+				hasSquareContent: data.hasSquareContent,
 				order: data.order,
 				image: url,
 				imageMetadata: {
@@ -62,7 +49,7 @@ export async function createCategory(data: CreateCategoryInput, imageBuffer: Buf
 
 export async function updateCategory(
 	id: string,
-	data: UpdateCategoryInput,
+	data: CategoryTypes.UpdateCategoryInput,
 	imageBuffer?: Buffer,
 	fileName?: string
 ) {
@@ -173,74 +160,26 @@ export async function listCategories(params: {
 	};
 }
 
-export async function updateCategoryOrder(categoryId: string, newOrder: number) {
+export const fetchClientCategories = async () => {
 	try {
-		// Get the category to be reordered
-		const category = await prisma.category.findUnique({
-			where: { id: categoryId }
+		const categories = await prisma.category.findMany({
+			where: {
+				isAvailable: true
+			},
+			orderBy: {
+				order: 'asc'
+			},
+			omit: {
+				createdAt: true,
+				userId: true,
+				updatedAt: true,
+				imageMetadataId: true
+			}
 		});
-
-		if (!category) {
-			throw new ApiError(StatusCodes.NOT_FOUND, 'Category not found');
-		}
-
-		// Get all categories sorted by order
-		// const categories = await prisma.category.findMany({
-		//   orderBy: { order: 'asc' }
-		// });
-
-		// If moving to a higher order number (moving down the list)
-		if (newOrder > category.order) {
-			await prisma.$transaction([
-				// Decrease order of categories between old and new position
-				prisma.category.updateMany({
-					where: {
-						order: {
-							gt: category.order,
-							lte: newOrder
-						}
-					},
-					data: {
-						order: { decrement: 1 }
-					}
-				}),
-				// Update the moved category's order
-				prisma.category.update({
-					where: { id: categoryId },
-					data: { order: newOrder }
-				})
-			]);
-		}
-		// If moving to a lower order number (moving up the list)
-		else if (newOrder < category.order) {
-			await prisma.$transaction([
-				// Increase order of categories between new and old position
-				prisma.category.updateMany({
-					where: {
-						order: {
-							gte: newOrder,
-							lt: category.order
-						}
-					},
-					data: {
-						order: { increment: 1 }
-					}
-				}),
-				// Update the moved category's order
-				prisma.category.update({
-					where: { id: categoryId },
-					data: { order: newOrder }
-				})
-			]);
-		}
-
-		return true;
+		return categories;
 	} catch (error) {
 		if (error instanceof ApiError) throw error;
-		throw new ApiError(
-			StatusCodes.INTERNAL_SERVER_ERROR,
-			`Failed to update category order: ${error.message}`
-		);
+		throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, `Failed to fetch categories: ${error.message}`);
 	}
 }
 
@@ -301,6 +240,30 @@ export async function deleteCategory(id: string) {
 		if (!category) {
 			throw new ApiError(StatusCodes.NOT_FOUND, 'Category not found');
 		}
+
+		// First delete the associated cards
+
+		const cards = await prisma.card.findMany({
+      where: { categoryId: id },
+      include: {
+        imageMetadata: true  // Include image metadata if cards have images
+      }
+    });
+
+    // Delete each card and its associated image metadata
+    for (const card of cards) {
+      // Delete card's image metadata if it exists
+      if (card.imageMetadata) {
+        await prisma.imageMetadata.delete({
+          where: { id: card.imageMetadata.id }
+        });
+      }
+      
+      // Delete the card
+      await prisma.card.delete({
+        where: { id: card.id }
+      });
+    }
 
 		// First, delete the associated image metadata if it exists
 		if (category.imageMetadata) {

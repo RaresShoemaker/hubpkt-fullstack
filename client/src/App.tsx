@@ -48,7 +48,7 @@ const App: React.FC = () => {
 						/>
 
 						<Route
-							path='/creatorhub'
+							path='/creatorshub'
 							element={
 								<TransitionAnimationProvider>
 									<CreatorsHubPage />
