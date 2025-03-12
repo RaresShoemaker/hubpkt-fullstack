@@ -5,8 +5,7 @@ import { Provider } from 'react-redux';
 import { store } from './store/store';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { HomePage, SubmissionPage, CreatorsHubPage, AuthenticationPage, DashboardPage } from './pages/index';
-import PageLayout from './layouts/PageLayout';
-import { TransitionAnimationProvider } from './context/TransitionAnimationContext/TransitionAnimationProvider';
+import SubmissionLayout from './layouts/SubmissionLayout';
 import AnalyticsTracker from './components/AnalyticsTracker';
 import { ThemeProvider } from './components/Admin/Theme/ThemeProvider';
 
@@ -22,16 +21,14 @@ const App: React.FC = () => {
 				<Router>
 					<AnalyticsTracker />
 					<Routes>
-						<Route element={<PageLayout />}>
+						<Route element={<SubmissionLayout />}>
 							<Route path='/submission' element={<SubmissionPage />} />
 						</Route>
 
 						<Route
 							path='/'
 							element={
-								<TransitionAnimationProvider>
 									<HomePage />
-								</TransitionAnimationProvider>
 							}
 						/>
 
@@ -50,9 +47,7 @@ const App: React.FC = () => {
 						<Route
 							path='/creatorshub'
 							element={
-								<TransitionAnimationProvider>
 									<CreatorsHubPage />
-								</TransitionAnimationProvider>
 							}
 						/>
 					</Routes>

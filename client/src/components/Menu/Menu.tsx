@@ -1,15 +1,13 @@
 import React, { useEffect } from 'react';
 import MenuButton from './MenuButtons';
 import { Link } from 'react-router-dom';
-import CreatorHubLogo from '../../assets/CreatorHubMenuLogo.svg?react';
-import PktTvLogo from '../../assets/PktTvLogo.svg?react';
-import NewsHubLogo from '../../assets/NewsHubLogo.svg?react';
-import { useTransitionAnimation } from '../../context/TransitionAnimationContext/TransitionAnimationContext';
+// import CreatorHubLogo from '../../assets/CreatorHubMenuLogo.svg?react';
+// import PktTvLogo from '../../assets/PktTvLogo.svg?react';
+// import NewsHubLogo from '../../assets/NewsHubLogo.svg?react';
 import { DiscordIcon, TwitterIcon, TelegramIcon } from '../../assets/icons';
 import { useCategories } from '../../store/features/categories/useCategories';
 
 const MenuCategory: React.FC = () => {
-	const { category } = useTransitionAnimation();
 	const { items, fetchCategoriesClient } = useCategories();
 
 	useEffect(() => {
@@ -30,25 +28,6 @@ const MenuCategory: React.FC = () => {
 					);
 				})}
 			</div>
-			{category === 'creators' && (
-				<div className='mt-28'>
-					<CreatorHubLogo className='w-full' />
-				</div>
-			)}
-			{category === 'news' && (
-				<div className='mt-28 mx-auto'>
-					<div className='w-[195px]'>
-						<NewsHubLogo className='w-full' />
-					</div>
-				</div>
-			)}
-			{category !== 'creators' && category !== 'news' && (
-				<div className='mt-28 mx-auto'>
-					<div className='w-[195px]'>
-						<PktTvLogo className='w-full' />
-					</div>
-				</div>
-			)}
 			<div className='flex gap-4 mt-4 h-10 mx-auto justify-center items-center'>
 				<div className='hover:cursor-pointer flex justify-center items-center'>
 					<Link to='https://telegram.me/pktcash' target='_blank'>
