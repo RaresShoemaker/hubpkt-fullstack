@@ -4,7 +4,7 @@ import Footer from '../components/Footer';
 import ToasterBannerProvider from '../context/ToasterBannerContext/ToasterBannerProvider';
 import ToasterBanner from '../components/ToasterBanner/ToasterBannerCard';
 
-const PageLayout: React.FC = () => {
+const SubmissionLayout: React.FC = () => {
 	return (
 		<div className='flex flex-col relative bg-blue-700 '>
 			<ToasterBannerProvider>
@@ -18,4 +18,4 @@ const PageLayout: React.FC = () => {
 	);
 };
 
-export default PageLayout;
+export default SubmissionLayout;

@@ -1,49 +1,29 @@
-import React, { useEffect } from 'react';
-import CategoryOverviewLayout from '../layouts/CategoryOverviewLayout';
-import SEO from '../components/SEO';
-import CreatorsStackedLogo from '../assets/PktCreatorStackLogo.png';
-import { useCategories } from '../store/features/categories/useCategories';
-import { useCards } from '../store/features/cards/useCards';
-import CreatorsCategoryContainer from '../components/Creators/CreatorsContainer';
+import React from 'react';
+import MainLayout from '../layouts/MainLayout';
+import MenuCategory from '../components/Menu/Menu';
 
-const CreatorsHubPage: React.FC = () => {
-  const { clientCategory } = useCategories();
-  const { handleFetchCreatorsCards, creatorsCards } = useCards();
-
-  useEffect(() => {
-    if (clientCategory) {
-      handleFetchCreatorsCards(clientCategory.id);
-    }
-  }, [handleFetchCreatorsCards, clientCategory]);
-
-  return (
-    <>
-      <SEO
-        title='Creator Hub'
-        description='Creator Hub'
-        keywords='Creator Hub'
-        url='https://hub.pkt.cash/creatorhub'
-        imgSrc={CreatorsStackedLogo}
-      />
-      <CategoryOverviewLayout>
-        <div className='flex flex-col gap-8'>
-          {creatorsCards && Object.keys(creatorsCards).length > 0 ? (
-            Object.entries(creatorsCards).map(([key, categoryData]) => (
-              categoryData && (
-                <CreatorsCategoryContainer 
-                  key={key}
-                  title={categoryData.title}
-                  data={categoryData.data}
-                />
-              )
-            ))
-          ) : (
-            <p className="text-white">Loading creator content...</p>
-          )}
-        </div>
-      </CategoryOverviewLayout>
-    </>
-  );
+const CreatorsHub: React.FC = () => {
+	return (
+		<MainLayout
+			menu={<MenuCategory />}
+			heroContainer={
+				<div className='bg-red-500 w-full h-full'>
+					<h1>Hero Container</h1>
+				</div>
+			}
+			background={
+				<div className='bg-blue-700 w-full h-full'>
+					{/* You can put any background content here */}
+					{/* This could be an image, gradient, or any other component */}
+				</div>
+			}
+		>
+			<div className='w-full h-full'>
+				<h1>Main Content Creators</h1>
+				<h1>Main Content Creators</h1>
+			</div>
+		</MainLayout>
+	);
 };
 
-export default CreatorsHubPage;
+export default CreatorsHub;
