@@ -122,7 +122,21 @@ export async function getCategory(id: string) {
 	const category = await prisma.category.findUnique({
 		where: { id },
 		include: {
-			imageMetadata: true
+			imageMetadata: true,
+			design: {
+				include: {
+					designElements: {
+						where: { deletedAt: null },
+						include: {
+							imageMetadata: true,
+							htmlElements: {
+								where: { deletedAt: null }
+							}
+						},
+						orderBy: { order: 'asc' }
+					}
+				}
+			}
 		}
 	});
 
@@ -149,7 +163,8 @@ export async function listCategories(params: {
 			where,
 			orderBy,
 			include: {
-				imageMetadata: true
+				imageMetadata: true,
+				design: true
 			}
 		})
 	]);
@@ -174,6 +189,15 @@ export const fetchClientCategories = async () => {
 				userId: true,
 				updatedAt: true,
 				imageMetadataId: true
+			},
+			include: {
+				design: {
+					select: {
+						id: true,
+						backgroundGradient: true,
+						transitionGradient: true
+					}
+				}
 			}
 		});
 		return categories;
@@ -233,7 +257,17 @@ export async function deleteCategory(id: string) {
 		const category = await prisma.category.findUnique({
 			where: { id },
 			include: {
-				imageMetadata: true
+				imageMetadata: true,
+				design: {
+					include: {
+						designElements: {
+							include: {
+								imageMetadata: true,
+								htmlElements: true
+							}
+						}
+					}
+				}
 			}
 		});
 
@@ -241,40 +275,71 @@ export async function deleteCategory(id: string) {
 			throw new ApiError(StatusCodes.NOT_FOUND, 'Category not found');
 		}
 
-		// First delete the associated cards
+		// Start a transaction to ensure all related deletions are atomic
+		await prisma.$transaction(async (prismaClient) => {
+			// 1. Delete CategoryDesign related data if it exists
+			if (category.design) {
+				// Delete HTML elements first
+				for (const element of category.design.designElements) {
+					if (element.htmlElements.length > 0) {
+						await prismaClient.htmlElement.deleteMany({
+							where: { designElementId: element.id }
+						});
+					}
+				}
+				
+				// Delete design elements and their image metadata
+				for (const element of category.design.designElements) {
+					if (element.imageMetadata) {
+						await prismaClient.imageMetadata.delete({
+							where: { id: element.imageMetadataId! }
+						});
+					}
+					await prismaClient.designElement.delete({
+						where: { id: element.id }
+					});
+				}
+				
+				// Delete the category design
+				await prismaClient.categoryDesign.delete({
+					where: { id: category.design.id }
+				});
+			}
 
-		const cards = await prisma.card.findMany({
-      where: { categoryId: id },
-      include: {
-        imageMetadata: true  // Include image metadata if cards have images
-      }
-    });
-
-    // Delete each card and its associated image metadata
-    for (const card of cards) {
-      // Delete card's image metadata if it exists
-      if (card.imageMetadata) {
-        await prisma.imageMetadata.delete({
-          where: { id: card.imageMetadata.id }
-        });
-      }
-      
-      // Delete the card
-      await prisma.card.delete({
-        where: { id: card.id }
-      });
-    }
-
-		// First, delete the associated image metadata if it exists
-		if (category.imageMetadata) {
-			await prisma.imageMetadata.delete({
-				where: { id: category.imageMetadata.id }
+			// 2. Delete all associated cards
+			const cards = await prismaClient.card.findMany({
+				where: { categoryId: id },
+				include: {
+					imageMetadata: true
+				}
 			});
-		}
 
-		// Then delete the category
-		await prisma.category.delete({
-			where: { id }
+			// Delete each card and its associated image metadata
+			for (const card of cards) {
+				// Delete card's image metadata if it exists
+				if (card.imageMetadata) {
+					await prismaClient.imageMetadata.delete({
+						where: { id: card.imageMetadata.id }
+					});
+				}
+				
+				// Delete the card
+				await prismaClient.card.delete({
+					where: { id: card.id }
+				});
+			}
+			
+			// 3. Delete the category's image metadata if it exists
+			if (category.imageMetadata) {
+				await prismaClient.imageMetadata.delete({
+					where: { id: category.imageMetadata.id }
+				});
+			}
+			
+			// 4. Finally delete the category
+			await prismaClient.category.delete({
+				where: { id }
+			});
 		});
 
 		return true;
