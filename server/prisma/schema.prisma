@@ -39,7 +39,7 @@ model Category {
   previewTitle String        @default("")
   hasSquareContent Boolean     @default(false)
 
-  design      CategoryDesign?
+  designElements DesignElement[]
 
   @@map("categories")
 }
@@ -80,8 +80,7 @@ model ImageMetadata {
   url       String
   category  Category?
   card      Card?
-
-   designElement DesignElement?
+  designElement DesignElement?
 
   @@map("image_metadata")
 }
@@ -92,29 +91,18 @@ enum DeviceSize {
   desktop
 }
 
-model CategoryDesign {
-  id                 String         @id @default(uuid())
-  category           Category       @relation(fields: [categoryId], references: [id])
-  categoryId         String         @unique
-  designElements     DesignElement[]
-  backgroundGradient String         @default("")
-  transitionGradient String         @default("")
-  createdAt          DateTime       @default(now())
-  updatedAt          DateTime       @updatedAt
-  deletedAt          DateTime?
-
-  @@map("category_designs")
-}
-
 model DesignElement {
   id              String         @id @default(uuid())
   url             String
   order           Int
-  categoryDesign  CategoryDesign @relation(fields: [categoryDesignId], references: [id])
-  categoryDesignId String
-  deviceSize      DeviceSize
+  category        Category       @relation(fields: [categoryId], references: [id])
+  categoryId      String
   imageMetadata   ImageMetadata? @relation(fields: [imageMetadataId], references: [id])
   imageMetadataId String?        @unique
+  image           String
+  device          DeviceSize
+  backgroundGradient String         @default("")
+  transitionGradient String         @default("")
   htmlElements    HtmlElement[]
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
