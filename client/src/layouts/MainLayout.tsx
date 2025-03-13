@@ -45,7 +45,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
           )}
 
           {backgroundTransition && (
-            <div className='w-full z-[5] h-[200px] relative flex justify-center'>
+            <div className='w-full z-[5] h-[200px] relative flex justify-center overflow-hidden'>
               {backgroundTransition}
             </div>
           )}

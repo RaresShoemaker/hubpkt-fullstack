@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useCategories } from '../../../../store/features/categories/useCategories';
 import { useCards } from '../../../../store/features/cards/useCards';
-// import ToolBar from '../ToolBar';
 import { useTheme } from '../../../../store/features/ui/useUITheme';
 import CardList from '../../Cards/CardsList';
 import { Card } from '../../../../store/features/cards/cards.types';
+import CategoryViewTabs from '../../Category/CategoryViewTabl';
+import CategoryDesigns from '../../Category/CategoryDesign';
 
 type CategoryContentProps = {
   id: string;
@@ -20,7 +21,7 @@ const CategoryContent: React.FC<CategoryContentProps> = () => {
   } = useCards();
   
   const [categoryCards, setCategoryCards] = useState<Card[]>([]);
-
+  const [activeView, setActiveView] = useState<'cards' | 'designs'>('cards');
 
   // Fetch cards for the current category
   useEffect(() => {
@@ -36,6 +37,10 @@ const CategoryContent: React.FC<CategoryContentProps> = () => {
     }
   }, [cards, currentCategory]);
 
+  const handleViewChange = (view: 'cards' | 'designs') => {
+    setActiveView(view);
+  };
+
   return (
     <div
       className={`flex-1 p-8 rounded-2xl border transition-colors duration-300
@@ -48,19 +53,26 @@ const CategoryContent: React.FC<CategoryContentProps> = () => {
             {currentCategory?.title || 'Loading...'}
           </h1>
           <p className={`mt-2 ${isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'}`}>
-            Manage cards in this category
+            Manage {activeView === 'cards' ? 'cards' : 'designs'} in this category
           </p>
-        </div>
-        <div>
-          {/* <ToolBar /> */}
         </div>
       </div>
 
-      {/* Content area - Card List */}
-      <CardList 
-        cards={categoryCards} 
-        isLoading={loading.fetchCardsByCategory} 
+      {/* View Tabs */}
+      <CategoryViewTabs 
+        activeView={activeView}
+        onChange={handleViewChange}
       />
+
+      {/* Content area - either Card List or Designs based on active view */}
+      {activeView === 'cards' ? (
+        <CardList 
+          cards={categoryCards} 
+          isLoading={loading.fetchCardsByCategory} 
+        />
+      ) : (
+        <CategoryDesigns />
+      )}
     </div>
   );
 };

@@ -1,3 +1,5 @@
+// src/api/endpoints.ts (Updated)
+
 export const API_ENDPOINTS = {
   auth: {
     me: '/user',
@@ -36,5 +38,25 @@ export const API_ENDPOINTS = {
     active: '/cards/filter/active',
     randomized: '/cards/filter/randomized',
     byCategory: (categoryId: string) => `/cards/filter/category/${categoryId}`,
+  },
+  categoryDesigns: {
+    // Category Design endpoints
+    create: '/category-designs',
+    getOne: (id: string) => `/category-designs/${id}`,
+    getByCategory: (categoryId: string) => `/category-designs/category/${categoryId}`,
+    update: (id: string) => `/category-designs/${id}`,
+    delete: (id: string) => `/category-designs/${id}`,
+    
+    // Design Element endpoints
+    createElement: '/category-designs/elements',
+    updateElement: (id: string) => `/category-designs/elements/${id}`,
+    deleteElement: (id: string) => `/category-designs/elements/${id}`,
+    getElementsByDeviceSize: (categoryId: string) => `/category-designs/elements/category/${categoryId}`,
+    reorderElements: (categoryDesignId: string) => `/category-designs/elements/${categoryDesignId}/reorder`,
+    
+    // HTML Element endpoints
+    createHtmlElement: '/category-designs/html-elements',
+    updateHtmlElement: (id: string) => `/category-designs/html-elements/${id}`,
+    deleteHtmlElement: (id: string) => `/category-designs/html-elements/${id}`,
   },
 } as const;
