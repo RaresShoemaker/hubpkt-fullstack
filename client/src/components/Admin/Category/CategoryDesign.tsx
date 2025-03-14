@@ -1,25 +1,27 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useState } from 'react';
 import { useTheme } from '../../../store/features/ui/useUITheme';
 import { useCategories } from '../../../store/features/categories/useCategories';
 import { useCategoryDesigns } from '../../../store/features/categoryDesigns/useCategoryDesigns';
 import { cn } from '../../../lib/utils';
 import ButtonBase from '../Buttons/ButtonBase';
-import { Monitor, Smartphone, TabletSmartphone, Plus, Edit, Trash2 } from 'lucide-react';
+import { Monitor, Smartphone, TabletSmartphone, Plus } from 'lucide-react';
 // Custom DeviceSize type to replace enum
 type DeviceSize = "mobile" | "tablet" | "desktop";
 import ModalPortal from '../Modal';
 import { CategoryDesignForm } from '../forms/CategoryForm/CategoryDesignForm';
-import { DesignElement } from '../../../store/features/categoryDesigns/categoryDesigns.types';
+// import { DesignElement } from '../../../store/features/categoryDesigns/categoryDesigns.types';
+// import CategoryDesignCard from './CategoryDesignCard';
 
 const CategoryDesign: React.FC = () => {
   const { isDark } = useTheme();
   const { currentCategory } = useCategories();
   const { 
-    currentDesign, 
+    currentDesign,
+    designs,
     currentElement,
     loading, 
     errors, 
-    getDesignElementsByDeviceSize,
     handleFetchCategoryDesignByCategoryId,
     handleCreateCategoryDesign,
     handleSelectDesignElement,
@@ -32,32 +34,39 @@ const CategoryDesign: React.FC = () => {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [elementToDelete, setElementToDelete] = useState<string | null>(null);
 
+  console.log(designs);
+
   // Fetch category design on mount or when category changes
   useEffect(() => {
     if (currentCategory?.id) {
-      handleFetchCategoryDesignByCategoryId(currentCategory.id);
+      handleFetchCategoryDesignByCategoryId(currentCategory.id, selectedDeviceSize);
     }
   }, [currentCategory, handleFetchCategoryDesignByCategoryId]);
 
+  // Handle device size selection
   const handleDeviceSizeChange = (deviceSize: DeviceSize) => {
     setSelectedDeviceSize(deviceSize);
   };
 
+  // Open modal to create a new element
   const handleOpenCreateElementModal = () => {
     handleSelectDesignElement(null);
     setIsElementModalOpen(true);
   };
 
-  const handleEditElement = (element: DesignElement) => {
-    handleSelectDesignElement(element);
-    setIsElementModalOpen(true);
-  };
+  // Handle edit element action
+  // const handleEditElement = (element: DesignElement) => {
+  //   handleSelectDesignElement(element);
+  //   setIsElementModalOpen(true);
+  // };
 
-  const handleOpenDeleteModal = (elementId: string) => {
-    setElementToDelete(elementId);
-    setIsDeleteModalOpen(true);
-  };
+  // // Handle delete element confirmation
+  // const handleOpenDeleteModal = (elementId: string) => {
+  //   setElementToDelete(elementId);
+  //   setIsDeleteModalOpen(true);
+  // };
 
+  // Execute delete element action
   const handleDeleteElement = async () => {
     if (elementToDelete) {
       await handleDeleteDesignElement(elementToDelete);
@@ -66,6 +75,7 @@ const CategoryDesign: React.FC = () => {
     }
   };
 
+  // Modal close handlers
   const closeModal = () => {
     setIsModalOpen(false);
   };
@@ -82,9 +92,6 @@ const CategoryDesign: React.FC = () => {
     setElementToDelete(null);
   };
 
-  // Get elements filtered by selected device size
-  const filteredElements = getDesignElementsByDeviceSize(selectedDeviceSize) || [];
-
   // Create new design if it doesn't exist yet
   const handleCreateDesign = async () => {
     if (currentCategory?.id && !currentDesign) {
@@ -93,6 +100,7 @@ const CategoryDesign: React.FC = () => {
     handleOpenCreateElementModal();
   };
 
+  // Empty state component
   const renderEmptyState = () => (
     <div className={cn(
       "flex flex-col items-center justify-center p-12 border-2 border-dashed rounded-xl",
@@ -184,88 +192,17 @@ const CategoryDesign: React.FC = () => {
       )}
 
       {/* Empty state */}
-      {!loading.fetchDesign && !errors.fetchDesign && (!currentDesign || filteredElements.length === 0) && (
-        renderEmptyState()
+      {!loading.fetchDesign && !errors.fetchDesign && (!currentDesign || currentDesign) && (
+        <>
+          {renderEmptyState()}
+        </>
       )}
 
       {/* Design elements grid */}
-      {!loading.fetchDesign && currentDesign && filteredElements.length > 0 && (
+      {!loading.fetchDesign && designs && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredElements.map((element) => (
-            <div 
-              key={element.id}
-              className={cn(
-                "border rounded-lg overflow-hidden shadow transition-shadow hover:shadow-md",
-                isDark ? "bg-dark-surface border-dark-border" : "bg-light-surface border-light-border"
-              )}
-            >
-              {/* Image preview */}
-              <div className="relative aspect-video">
-                <img 
-                  src={element.url} 
-                  alt={`Design element ${element.id}`}
-                  className="w-full h-full object-cover"
-                />
-                
-                {/* Actions overlay */}
-                <div className={cn(
-                  "absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity",
-                  "flex items-center justify-center gap-3"
-                )}>
-                  <ButtonBase
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleEditElement(element)}
-                    leftIcon={<Edit size={16} className="text-white" />}
-                    className="bg-black/50 text-white hover:bg-black/70"
-                  >
-                    Edit
-                  </ButtonBase>
-                  <ButtonBase
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleOpenDeleteModal(element.id)}
-                    leftIcon={<Trash2 size={16} className="text-white" />}
-                    className="bg-black/50 text-white hover:bg-black/70"
-                  >
-                    Delete
-                  </ButtonBase>
-                </div>
-              </div>
-              
-              {/* Info section */}
-              <div className="p-4">
-                <div className="flex justify-between items-center">
-                  <div className={cn(
-                    "px-2 py-1 rounded-md text-xs",
-                    isDark ? "bg-dark-border/20" : "bg-light-border/20"
-                  )}>
-                    <span className={isDark ? "text-dark-text-secondary" : "text-light-text-secondary"}>
-                      Order: {element.order}
-                    </span>
-                  </div>
-                  
-                  <div className={cn(
-                    "px-2 py-1 rounded-md text-xs",
-                    isDark 
-                      ? "bg-dark-accent/10 text-dark-accent" 
-                      : "bg-light-accent/10 text-light-accent"
-                  )}>
-                    {element.deviceSize}
-                  </div>
-                </div>
-                
-                {/* HTML Elements count */}
-                {element.htmlElements && element.htmlElements.length > 0 && (
-                  <div className="mt-2 text-sm">
-                    <span className={isDark ? "text-dark-text-secondary" : "text-light-text-secondary"}>
-                      {element.htmlElements.length} HTML elements
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
-          ))}
+          
+         <p>asd</p>
         </div>
       )}
 

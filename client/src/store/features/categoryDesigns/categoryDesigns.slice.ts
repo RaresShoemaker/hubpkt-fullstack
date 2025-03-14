@@ -16,6 +16,11 @@ import {
 } from './categoryDesigns.thunk';
 
 const initialState: CategoryDesignsState = {
+  designs: {
+    desktop: null,
+    tablet: null,
+    mobile: null,
+  },
   currentDesign: null,
   currentElement: null,
   operations: {
@@ -149,7 +154,7 @@ const categoryDesignsSlice = createSlice({
       })
       .addCase(fetchCategoryDesignByCategoryId.fulfilled, (state, action) => {
         state.operations.fetchDesign.isLoading = false;
-        state.currentDesign = action.payload;
+        state.designs[action.meta.arg.deviceSize] = action.payload[action.meta.arg.deviceSize];
       })
       .addCase(fetchCategoryDesignByCategoryId.rejected, (state, action) => {
         state.operations.fetchDesign.isLoading = false;

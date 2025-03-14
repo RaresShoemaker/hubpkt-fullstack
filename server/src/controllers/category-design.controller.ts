@@ -167,9 +167,11 @@ export const deleteDesignElement = catchAsync(async (req: Request, res: Response
 // Get design elements by device size for a category
 export const getDesignElementsByDeviceSize = catchAsync(async (req: Request, res: Response) => {
   const { categoryId } = req.params;
-  const { deviceSize } = req.query;
   
-  const convertedDeviceSize = convertStringToDeviceSize(deviceSize as string);
+  // Support both deviceSize and device query parameters for backward compatibility
+  const deviceSizeParam = req.query.deviceSize || req.query.device;
+  
+  const convertedDeviceSize = convertStringToDeviceSize(deviceSizeParam as string);
   if (!convertedDeviceSize) {
     res.status(StatusCodes.BAD_REQUEST).json({
       status: 'error',

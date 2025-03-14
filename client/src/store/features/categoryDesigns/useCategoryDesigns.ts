@@ -35,7 +35,7 @@ type DeviceSize = "mobile" | "tablet" | "desktop";
 
 export const useCategoryDesigns = () => {
   const dispatch = useAppDispatch();
-  const { currentDesign, currentElement, operations } = useAppSelector(
+  const { currentDesign, currentElement, operations, designs } = useAppSelector(
     (state) => state.categoryDesigns
   );
 
@@ -75,8 +75,8 @@ export const useCategoryDesigns = () => {
   }, [dispatch]);
 
   // Fetch category design by category ID
-  const handleFetchCategoryDesignByCategoryId = useCallback((categoryId: string) => {
-    return dispatch(fetchCategoryDesignByCategoryId(categoryId)).unwrap();
+  const handleFetchCategoryDesignByCategoryId = useCallback((categoryId: string, deviceSize: DeviceSize) => {
+    return dispatch(fetchCategoryDesignByCategoryId({categoryId, deviceSize})).unwrap();
   }, [dispatch]);
 
   // Create design element
@@ -126,6 +126,7 @@ export const useCategoryDesigns = () => {
     currentDesign,
     currentElement,
     operations,
+    designs,
     
     // Loading states
     loading: {

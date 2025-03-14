@@ -81,10 +81,13 @@ export const fetchCategoryDesign = createAsyncThunk(
 // Fetch Category Design by Category ID
 export const fetchCategoryDesignByCategoryId = createAsyncThunk(
   'categoryDesigns/fetchByCategoryId',
-  async (categoryId: string, { rejectWithValue }) => {
+  async (
+    { categoryId, deviceSize }: { categoryId: string; deviceSize: "tablet" | "mobile" | "desktop" },
+    { rejectWithValue }
+  ) => {
     try {
-      const response = await api.get(API_ENDPOINTS.categoryDesigns.getByCategory(categoryId));
-      return response.data.data as CategoryDesign;
+      const response = await api.get(`${API_ENDPOINTS.categoryDesigns.getByCategory(categoryId)}?deviceSize=${deviceSize}`);
+      return response.data.data;
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data?.message || 'Failed to fetch category design'

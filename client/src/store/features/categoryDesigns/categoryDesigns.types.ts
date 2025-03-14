@@ -82,6 +82,7 @@ export interface ReorderDesignElementsRequest {
 
 // Redux state type
 export interface CategoryDesignsState {
+  designs: Record<"desktop" | "tablet" | "mobile", CategoryDesign[] | null>;
   currentDesign: CategoryDesign | null;
   currentElement: DesignElement | null;
   operations: {

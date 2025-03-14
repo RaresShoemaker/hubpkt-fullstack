@@ -84,7 +84,6 @@ const CardComponent: React.FC<CardComponentProps> = (props) => {
 
   const handleCardClick = () => {
     // Set the current card when clicked
-    console.log(card)
     handleSelectCard(card);
   };
 
