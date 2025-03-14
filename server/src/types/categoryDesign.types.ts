@@ -1,31 +1,23 @@
 import { DeviceSize } from '@prisma/client';
 
-export interface CreateCategoryDesignInput {
+export interface CreateDesignElementInput {
   categoryId: string;
-  backgroundGradient?: string;
-  transitionGradient?: string;
-}
-
-export interface UpdateCategoryDesignInput {
-  backgroundGradient?: string;
-  transitionGradient?: string;
-}
-
-export interface DesignElementInput {
   url: string;
   order: number;
-  deviceSize: DeviceSize;
+  device: DeviceSize;
+  image: string;
+  backgroundGradient?: string;
+  transitionGradient?: string;
   htmlElements?: HtmlElementInput[];
-}
-
-export interface CreateDesignElementInput extends DesignElementInput {
-  categoryDesignId: string;
 }
 
 export interface UpdateDesignElementInput {
   url?: string;
   order?: number;
-  deviceSize?: DeviceSize;
+  device?: DeviceSize;
+  image?: string;
+  backgroundGradient?: string;
+  transitionGradient?: string;
 }
 
 export interface HtmlElementInput {

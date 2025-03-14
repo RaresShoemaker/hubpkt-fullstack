@@ -123,19 +123,18 @@ export async function getCategory(id: string) {
 		where: { id },
 		include: {
 			imageMetadata: true,
-			design: {
+			designElements: {
+				where: { deletedAt: null },
 				include: {
-					designElements: {
-						where: { deletedAt: null },
-						include: {
-							imageMetadata: true,
-							htmlElements: {
-								where: { deletedAt: null }
-							}
-						},
-						orderBy: { order: 'asc' }
+					imageMetadata: true,
+					htmlElements: {
+						where: { deletedAt: null }
 					}
-				}
+				},
+				orderBy: [
+					{ device: 'asc' },
+					{ order: 'asc' }
+				]
 			}
 		}
 	});
@@ -164,7 +163,14 @@ export async function listCategories(params: {
 			orderBy,
 			include: {
 				imageMetadata: true,
-				design: true
+				designElements: {
+					select: {
+						id: true,
+						backgroundGradient: true,
+						transitionGradient: true
+					},
+					take: 1
+				}
 			}
 		})
 	]);
@@ -191,12 +197,13 @@ export const fetchClientCategories = async () => {
 				imageMetadataId: true
 			},
 			include: {
-				design: {
+				designElements: {
 					select: {
 						id: true,
 						backgroundGradient: true,
 						transitionGradient: true
-					}
+					},
+					take: 1
 				}
 			}
 		});
@@ -258,14 +265,10 @@ export async function deleteCategory(id: string) {
 			where: { id },
 			include: {
 				imageMetadata: true,
-				design: {
+				designElements: {
 					include: {
-						designElements: {
-							include: {
-								imageMetadata: true,
-								htmlElements: true
-							}
-						}
+						imageMetadata: true,
+						htmlElements: true
 					}
 				}
 			}
@@ -277,32 +280,25 @@ export async function deleteCategory(id: string) {
 
 		// Start a transaction to ensure all related deletions are atomic
 		await prisma.$transaction(async (prismaClient) => {
-			// 1. Delete CategoryDesign related data if it exists
-			if (category.design) {
+			// 1. Delete Design Elements and related data
+			for (const element of category.designElements) {
 				// Delete HTML elements first
-				for (const element of category.design.designElements) {
-					if (element.htmlElements.length > 0) {
-						await prismaClient.htmlElement.deleteMany({
-							where: { designElementId: element.id }
-						});
-					}
-				}
-				
-				// Delete design elements and their image metadata
-				for (const element of category.design.designElements) {
-					if (element.imageMetadata) {
-						await prismaClient.imageMetadata.delete({
-							where: { id: element.imageMetadataId! }
-						});
-					}
-					await prismaClient.designElement.delete({
-						where: { id: element.id }
+				if (element.htmlElements.length > 0) {
+					await prismaClient.htmlElement.deleteMany({
+						where: { designElementId: element.id }
 					});
 				}
 				
-				// Delete the category design
-				await prismaClient.categoryDesign.delete({
-					where: { id: category.design.id }
+				// Delete image metadata
+				if (element.imageMetadata) {
+					await prismaClient.imageMetadata.delete({
+						where: { id: element.imageMetadataId! }
+					});
+				}
+				
+				// Delete the design element
+				await prismaClient.designElement.delete({
+					where: { id: element.id }
 				});
 			}
 

@@ -3,8 +3,6 @@ import { prisma } from '../db/prisma-client';
 import { StatusCodes } from 'http-status-codes';
 import ApiError from '../utils/ApiError';
 import { 
-  CreateCategoryDesignInput, 
-  UpdateCategoryDesignInput,
   CreateDesignElementInput,
   UpdateDesignElementInput,
   CreateHtmlElementInput,
@@ -13,8 +11,12 @@ import {
 import { UploadMediaTypes } from '../types';
 import { ImageMetadataServices } from './index';
 
-// Create a new category design
-export async function createCategoryDesign(data: CreateCategoryDesignInput) {
+// Create a new design element
+export async function createDesignElement(
+  data: CreateDesignElementInput, 
+  imageBuffer: Buffer, 
+  fileName: string
+) {
   try {
     // Check if category exists
     const category = await prisma.category.findUnique({
@@ -23,179 +25,6 @@ export async function createCategoryDesign(data: CreateCategoryDesignInput) {
 
     if (!category) {
       throw new ApiError(StatusCodes.NOT_FOUND, 'Category not found');
-    }
-
-    // Check if design already exists for this category
-    const existingDesign = await prisma.categoryDesign.findUnique({
-      where: { categoryId: data.categoryId }
-    });
-
-    if (existingDesign) {
-      throw new ApiError(StatusCodes.CONFLICT, 'Design already exists for this category');
-    }
-
-    // Create new design
-    const design = await prisma.categoryDesign.create({
-      data: {
-        categoryId: data.categoryId,
-        backgroundGradient: data.backgroundGradient || '',
-        transitionGradient: data.transitionGradient || ''
-      }
-    });
-
-    return design;
-  } catch (error) {
-    if (error instanceof ApiError) throw error;
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, `Failed to create category design: ${error.message}`);
-  }
-}
-
-// Update an existing category design
-export async function updateCategoryDesign(id: string, data: UpdateCategoryDesignInput) {
-  try {
-    const design = await prisma.categoryDesign.findUnique({
-      where: { id }
-    });
-
-    if (!design) {
-      throw new ApiError(StatusCodes.NOT_FOUND, 'Category design not found');
-    }
-
-    const updatedDesign = await prisma.categoryDesign.update({
-      where: { id },
-      data
-    });
-
-    return updatedDesign;
-  } catch (error) {
-    if (error instanceof ApiError) throw error;
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, `Failed to update category design: ${error.message}`);
-  }
-}
-
-// Get a category design by ID
-export async function getCategoryDesign(id: string) {
-  try {
-    const design = await prisma.categoryDesign.findUnique({
-      where: { id },
-      include: {
-        designElements: {
-          where: { deletedAt: null },
-          include: {
-            imageMetadata: true,
-            htmlElements: {
-              where: { deletedAt: null }
-            }
-          },
-          orderBy: { order: 'asc' }
-        }
-      }
-    });
-
-    if (!design) {
-      throw new ApiError(StatusCodes.NOT_FOUND, 'Category design not found');
-    }
-
-    return design;
-  } catch (error) {
-    if (error instanceof ApiError) throw error;
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, `Failed to get category design: ${error.message}`);
-  }
-}
-
-// Get a category design by category ID
-export async function getCategoryDesignByCategoryId(categoryId: string) {
-  try {
-    const design = await prisma.categoryDesign.findUnique({
-      where: { categoryId },
-      include: {
-        designElements: {
-          where: { deletedAt: null },
-          include: {
-            imageMetadata: true,
-            htmlElements: {
-              where: { deletedAt: null }
-            }
-          },
-          orderBy: { order: 'asc' }
-        }
-      }
-    });
-
-    if (!design) {
-      throw new ApiError(StatusCodes.NOT_FOUND, 'Category design not found');
-    }
-
-    return design;
-  } catch (error) {
-    if (error instanceof ApiError) throw error;
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, `Failed to get category design: ${error.message}`);
-  }
-}
-
-// Delete a category design
-export async function deleteCategoryDesign(id: string) {
-  try {
-    const design = await prisma.categoryDesign.findUnique({
-      where: { id },
-      include: {
-        designElements: {
-          include: {
-            imageMetadata: true,
-            htmlElements: true
-          }
-        }
-      }
-    });
-
-    if (!design) {
-      throw new ApiError(StatusCodes.NOT_FOUND, 'Category design not found');
-    }
-
-    // First, delete all HTML elements
-    for (const element of design.designElements) {
-      await prisma.htmlElement.deleteMany({
-        where: { designElementId: element.id }
-      });
-    }
-
-    // Delete all design elements
-    for (const element of design.designElements) {
-      if (element.imageMetadata) {
-        await prisma.imageMetadata.delete({
-          where: { id: element.imageMetadataId! }
-        });
-      }
-      await prisma.designElement.delete({
-        where: { id: element.id }
-      });
-    }
-
-    // Finally, delete the category design
-    await prisma.categoryDesign.delete({
-      where: { id }
-    });
-
-    return true;
-  } catch (error) {
-    if (error instanceof ApiError) throw error;
-    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, `Failed to delete category design: ${error.message}`);
-  }
-}
-
-// Create a new design element
-export async function createDesignElement(
-  data: CreateDesignElementInput, 
-  imageBuffer: Buffer, 
-  fileName: string
-) {
-  try {
-    const design = await prisma.categoryDesign.findUnique({
-      where: { id: data.categoryDesignId }
-    });
-
-    if (!design) {
-      throw new ApiError(StatusCodes.NOT_FOUND, 'Category design not found');
     }
 
     // Upload image and create metadata
@@ -213,8 +42,11 @@ export async function createDesignElement(
       data: {
         url,
         order: data.order,
-        deviceSize: data.deviceSize,
-        categoryDesignId: data.categoryDesignId,
+        device: data.device,
+        image: url,
+        categoryId: data.categoryId,
+        backgroundGradient: data.backgroundGradient || '',
+        transitionGradient: data.transitionGradient || '',
         imageMetadataId: imageMetadata.id
       }
     });
@@ -309,6 +141,7 @@ export async function updateDesignElement(
     const updateData: Prisma.DesignElementUpdateInput = { ...data };
     if (imageUrl) {
       updateData.url = imageUrl;
+      updateData.image = imageUrl;
     }
 
     const updatedElement = await prisma.designElement.update({
@@ -437,20 +270,20 @@ export async function deleteHtmlElement(id: string) {
 }
 
 // Get design elements by device size for a category
-export async function getDesignElementsByDeviceSize(categoryId: string, deviceSize: DeviceSize) {
+export async function getDesignElementsByDeviceSize(categoryId: string, device: DeviceSize) {
   try {
-    const design = await prisma.categoryDesign.findUnique({
-      where: { categoryId }
+    const category = await prisma.category.findUnique({
+      where: { id: categoryId }
     });
 
-    if (!design) {
-      throw new ApiError(StatusCodes.NOT_FOUND, 'Category design not found');
+    if (!category) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Category not found');
     }
 
     const elements = await prisma.designElement.findMany({
       where: {
-        categoryDesignId: design.id,
-        deviceSize,
+        categoryId,
+        device,
         deletedAt: null
       },
       include: {
@@ -471,17 +304,17 @@ export async function getDesignElementsByDeviceSize(categoryId: string, deviceSi
 
 // Reorder design elements
 export async function reorderDesignElements(
-  categoryDesignId: string, 
-  deviceSize: DeviceSize, 
+  categoryId: string, 
+  device: DeviceSize, 
   elementIds: string[]
 ) {
   try {
-    // Check if all elements exist and belong to the specified design and device size
+    // Check if all elements exist and belong to the specified category and device size
     const elements = await prisma.designElement.findMany({
       where: {
         id: { in: elementIds },
-        categoryDesignId,
-        deviceSize,
+        categoryId,
+        device,
         deletedAt: null
       }
     });
@@ -489,7 +322,7 @@ export async function reorderDesignElements(
     if (elements.length !== elementIds.length) {
       throw new ApiError(
         StatusCodes.BAD_REQUEST, 
-        'One or more design elements do not exist or do not belong to the specified category design and device size'
+        'One or more design elements do not exist or do not belong to the specified category and device size'
       );
     }
 
@@ -506,8 +339,8 @@ export async function reorderDesignElements(
     // Return the reordered elements
     return await prisma.designElement.findMany({
       where: {
-        categoryDesignId,
-        deviceSize,
+        categoryId,
+        device,
         deletedAt: null
       },
       include: {
@@ -521,5 +354,47 @@ export async function reorderDesignElements(
   } catch (error) {
     if (error instanceof ApiError) throw error;
     throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, `Failed to reorder design elements: ${error.message}`);
+  }
+}
+
+// Get all design elements for a category
+export async function getCategoryDesignElements(categoryId: string) {
+  try {
+    const category = await prisma.category.findUnique({
+      where: { id: categoryId }
+    });
+
+    if (!category) {
+      throw new ApiError(StatusCodes.NOT_FOUND, 'Category not found');
+    }
+
+    const elements = await prisma.designElement.findMany({
+      where: {
+        categoryId,
+        deletedAt: null
+      },
+      include: {
+        imageMetadata: true,
+        htmlElements: {
+          where: { deletedAt: null }
+        }
+      },
+      orderBy: [
+        { device: 'asc' },
+        { order: 'asc' }
+      ]
+    });
+
+    // Group by device
+    const elementsByDevice = {
+      mobile: elements.filter(e => e.device === 'mobile'),
+      tablet: elements.filter(e => e.device === 'tablet'),
+      desktop: elements.filter(e => e.device === 'desktop')
+    };
+
+    return elementsByDevice;
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, `Failed to get category design elements: ${error.message}`);
   }
 }

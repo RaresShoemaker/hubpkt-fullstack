@@ -21,7 +21,8 @@ const createCategorySchema = z.object({
   hasPreview: z.string(),
   isAvailable: z.string(),
   userId: z.string().uuid(),
-  previewTitle: z.string()
+  previewTitle: z.string(),
+  hasSquareContent: z.string().optional()
 });
 
 // File validation
@@ -61,6 +62,7 @@ export const createCategory = catchAsync(async (req: MulterRequest, res: Respons
       isAvailable: validatedData.isAvailable === "true",
       userId: validatedData.userId,
       previewTitle: validatedData.previewTitle,
+      hasSquareContent: validatedData.hasSquareContent === "true",
       order
     },
     req.file.buffer,

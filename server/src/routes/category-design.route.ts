@@ -20,19 +20,13 @@ const upload = multer({
   }
 });
 
-// Category Design routes
-router.post('/', verifyAuth, CategoryDesignController.createCategoryDesign);
-router.get('/:id', CategoryDesignController.getCategoryDesign);
-router.get('/category/:categoryId', CategoryDesignController.getCategoryDesignByCategoryId);
-router.patch('/:id', verifyAuth, CategoryDesignController.updateCategoryDesign);
-router.delete('/:id', verifyAuth, CategoryDesignController.deleteCategoryDesign);
-
 // Design Element routes
+router.get('/category/:categoryId', CategoryDesignController.getCategoryDesignElements);
 router.post('/elements', verifyAuth, upload.single('image'), CategoryDesignController.createDesignElement);
 router.patch('/elements/:id', verifyAuth, upload.single('image'), CategoryDesignController.updateDesignElement);
 router.delete('/elements/:id', verifyAuth, CategoryDesignController.deleteDesignElement);
 router.get('/elements/category/:categoryId', CategoryDesignController.getDesignElementsByDeviceSize);
-router.post('/elements/:categoryDesignId/reorder', verifyAuth, CategoryDesignController.reorderDesignElements);
+router.post('/elements/category/:categoryId/reorder', verifyAuth, CategoryDesignController.reorderDesignElements);
 
 // HTML Element routes
 router.post('/html-elements', verifyAuth, CategoryDesignController.createHtmlElement);
