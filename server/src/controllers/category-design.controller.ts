@@ -20,63 +20,15 @@ const convertStringToDeviceSize = (deviceSize?: string): DeviceSize | undefined 
   }
 };
 
-// Create a new category design
-export const createCategoryDesign = catchAsync(async (req: Request, res: Response) => {
-  const design = await CategoryDesignService.createCategoryDesign({
-    categoryId: req.body.categoryId,
-    backgroundGradient: req.body.backgroundGradient,
-    transitionGradient: req.body.transitionGradient
-  });
-
-  res.status(StatusCodes.CREATED).json({
-    status: 'success',
-    data: design
-  });
-});
-
-// Update a category design
-export const updateCategoryDesign = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  
-  const design = await CategoryDesignService.updateCategoryDesign(id, {
-    backgroundGradient: req.body.backgroundGradient,
-    transitionGradient: req.body.transitionGradient
-  });
-
-  res.json({
-    status: 'success',
-    data: design
-  });
-});
-
-// Get a category design by ID
-export const getCategoryDesign = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  const design = await CategoryDesignService.getCategoryDesign(id);
-
-  res.json({
-    status: 'success',
-    data: design
-  });
-});
-
-// Get a category design by category ID
-export const getCategoryDesignByCategoryId = catchAsync(async (req: Request, res: Response) => {
+// Get all design elements for a category, grouped by device type
+export const getCategoryDesignElements = catchAsync(async (req: Request, res: Response) => {
   const { categoryId } = req.params;
-  const design = await CategoryDesignService.getCategoryDesignByCategoryId(categoryId);
+  const elements = await CategoryDesignService.getDesignElementsByCategory(categoryId);
 
   res.json({
     status: 'success',
-    data: design
+    data: elements
   });
-});
-
-// Delete a category design
-export const deleteCategoryDesign = catchAsync(async (req: Request, res: Response) => {
-  const { id } = req.params;
-  await CategoryDesignService.deleteCategoryDesign(id);
-
-  res.status(StatusCodes.NO_CONTENT).send();
 });
 
 // Create a new design element
@@ -91,8 +43,8 @@ export const createDesignElement = catchAsync(async (req: Request, res: Response
     return;
   }
 
-  const deviceSize = convertStringToDeviceSize(req.body.deviceSize);
-  if (!deviceSize) {
+  const device = convertStringToDeviceSize(req.body.device);
+  if (!device) {
     res.status(StatusCodes.BAD_REQUEST).json({
       status: 'error',
       message: 'Invalid device size. Must be one of: mobile, tablet, desktop'
@@ -116,10 +68,13 @@ export const createDesignElement = catchAsync(async (req: Request, res: Response
 
   const element = await CategoryDesignService.createDesignElement(
     {
-      categoryDesignId: req.body.categoryDesignId,
+      categoryId: req.body.categoryId,
       url: '', // Will be set by the service after upload
+      image: '', // Will be set by the service after upload
       order: parseInt(req.body.order) || 1,
-      deviceSize,
+      device,
+      backgroundGradient: req.body.backgroundGradient || '',
+      transitionGradient: req.body.transitionGradient || '',
       htmlElements: htmlElements
     },
     imageFile.buffer,
@@ -137,11 +92,13 @@ export const updateDesignElement = catchAsync(async (req: Request, res: Response
   const { id } = req.params;
   const imageFile = req.file;
   
-  const deviceSize = convertStringToDeviceSize(req.body.deviceSize);
+  const device = convertStringToDeviceSize(req.body.device);
   
   const updateData: any = {};
   if (req.body.order) updateData.order = parseInt(req.body.order);
-  if (deviceSize) updateData.deviceSize = deviceSize;
+  if (device) updateData.device = device;
+  if (req.body.backgroundGradient !== undefined) updateData.backgroundGradient = req.body.backgroundGradient;
+  if (req.body.transitionGradient !== undefined) updateData.transitionGradient = req.body.transitionGradient;
 
   const element = await CategoryDesignService.updateDesignElement(
     id,
@@ -167,9 +124,11 @@ export const deleteDesignElement = catchAsync(async (req: Request, res: Response
 // Get design elements by device size for a category
 export const getDesignElementsByDeviceSize = catchAsync(async (req: Request, res: Response) => {
   const { categoryId } = req.params;
-  const { deviceSize } = req.query;
   
-  const convertedDeviceSize = convertStringToDeviceSize(deviceSize as string);
+  // Support both deviceSize and device query parameters for backward compatibility
+  const deviceSizeParam = req.query.deviceSize || req.query.device;
+  
+  const convertedDeviceSize = convertStringToDeviceSize(deviceSizeParam as string);
   if (!convertedDeviceSize) {
     res.status(StatusCodes.BAD_REQUEST).json({
       status: 'error',
@@ -191,10 +150,10 @@ export const getDesignElementsByDeviceSize = catchAsync(async (req: Request, res
 
 // Reorder design elements
 export const reorderDesignElements = catchAsync(async (req: Request, res: Response) => {
-  const { categoryDesignId } = req.params;
-  const { deviceSize, elementIds } = req.body;
+  const { categoryId } = req.params;
+  const { device, elementIds } = req.body;
   
-  const convertedDeviceSize = convertStringToDeviceSize(deviceSize);
+  const convertedDeviceSize = convertStringToDeviceSize(device);
   if (!convertedDeviceSize) {
     res.status(StatusCodes.BAD_REQUEST).json({
       status: 'error',
@@ -212,7 +171,7 @@ export const reorderDesignElements = catchAsync(async (req: Request, res: Respon
   }
 
   const elements = await CategoryDesignService.reorderDesignElements(
-    categoryDesignId,
+    categoryId,
     convertedDeviceSize,
     elementIds
   );

@@ -123,20 +123,6 @@ export async function getCategory(id: string) {
 		where: { id },
 		include: {
 			imageMetadata: true,
-			design: {
-				include: {
-					designElements: {
-						where: { deletedAt: null },
-						include: {
-							imageMetadata: true,
-							htmlElements: {
-								where: { deletedAt: null }
-							}
-						},
-						orderBy: { order: 'asc' }
-					}
-				}
-			}
 		}
 	});
 
@@ -164,7 +150,6 @@ export async function listCategories(params: {
 			orderBy,
 			include: {
 				imageMetadata: true,
-				design: true
 			}
 		})
 	]);
@@ -190,15 +175,6 @@ export const fetchClientCategories = async () => {
 				updatedAt: true,
 				imageMetadataId: true
 			},
-			include: {
-				design: {
-					select: {
-						id: true,
-						backgroundGradient: true,
-						transitionGradient: true
-					}
-				}
-			}
 		});
 		return categories;
 	} catch (error) {
@@ -258,16 +234,6 @@ export async function deleteCategory(id: string) {
 			where: { id },
 			include: {
 				imageMetadata: true,
-				design: {
-					include: {
-						designElements: {
-							include: {
-								imageMetadata: true,
-								htmlElements: true
-							}
-						}
-					}
-				}
 			}
 		});
 
@@ -278,33 +244,6 @@ export async function deleteCategory(id: string) {
 		// Start a transaction to ensure all related deletions are atomic
 		await prisma.$transaction(async (prismaClient) => {
 			// 1. Delete CategoryDesign related data if it exists
-			if (category.design) {
-				// Delete HTML elements first
-				for (const element of category.design.designElements) {
-					if (element.htmlElements.length > 0) {
-						await prismaClient.htmlElement.deleteMany({
-							where: { designElementId: element.id }
-						});
-					}
-				}
-				
-				// Delete design elements and their image metadata
-				for (const element of category.design.designElements) {
-					if (element.imageMetadata) {
-						await prismaClient.imageMetadata.delete({
-							where: { id: element.imageMetadataId! }
-						});
-					}
-					await prismaClient.designElement.delete({
-						where: { id: element.id }
-					});
-				}
-				
-				// Delete the category design
-				await prismaClient.categoryDesign.delete({
-					where: { id: category.design.id }
-				});
-			}
 
 			// 2. Delete all associated cards
 			const cards = await prismaClient.card.findMany({

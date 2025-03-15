@@ -1,133 +1,97 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { ImageMetadata } from '../categories/categories.types';
-
-// Basic types
-export interface HtmlElement {
-  id: string;
-  designElementId: string;
-  htmlTag: any; // JSON object with HTML content
-  createdAt: string;
-  updatedAt: string;
-  deletedAt?: string;
+export enum DeviceSize {
+  mobile = 'mobile',
+  tablet = 'tablet',
+  desktop = 'desktop'
 }
 
 export interface DesignElement {
   id: string;
   url: string;
   order: number;
-  categoryDesignId: string;
-  deviceSize: "mobile" | "tablet" | "desktop";
+  categoryId: string;
+  device: DeviceSize;
+  image: string;
   imageMetadataId?: string;
-  imageMetadata?: ImageMetadata;
+  backgroundGradient: string;
+  transitionGradient: string;
   htmlElements: HtmlElement[];
   createdAt: string;
   updatedAt: string;
   deletedAt?: string;
+  imageMetadata?: ImageMetadata;
 }
 
-export interface CategoryDesign {
+export interface HtmlElement {
   id: string;
-  categoryId: string;
-  backgroundGradient: string;
-  transitionGradient: string;
-  designElements: DesignElement[];
+  designElementId: string;
+  htmlTag: any; // JSON data for HTML elements
   createdAt: string;
   updatedAt: string;
   deletedAt?: string;
 }
 
-// Request/Response types for API calls
-export interface CreateCategoryDesignRequest {
-  categoryId: string;
-  backgroundGradient?: string;
-  transitionGradient?: string;
-}
-
-export interface UpdateCategoryDesignRequest {
+export interface ImageMetadata {
   id: string;
-  backgroundGradient?: string;
-  transitionGradient?: string;
+  width: number;
+  height: number;
+  size: number;
+  mimeType: string;
+  url: string;
 }
 
+export interface CategoryDesigns {
+  mobile: DesignElement[];
+  tablet: DesignElement[];
+  desktop: DesignElement[];
+}
+
+export interface CategoryDesignsState {
+  designs: CategoryDesigns;
+  currentDesign: DesignElement | null;
+  loading: boolean;
+  error: string | null;
+}
+
+// Request Types
 export interface CreateDesignElementRequest {
-  categoryDesignId: string;
-  image: File;
+  categoryId: string;
+  device: DeviceSize;
   order: number;
-  deviceSize: "mobile" | "tablet" | "desktop";
-  htmlElements?: CreateHtmlElementRequest[];
+  backgroundGradient?: string;
+  transitionGradient?: string;
+  htmlElements?: any[];
+  image: File;
 }
 
 export interface UpdateDesignElementRequest {
   id: string;
-  image?: File;
+  device?: DeviceSize;
   order?: number;
-  deviceSize?: "mobile" | "tablet" | "desktop";
+  backgroundGradient?: string;
+  transitionGradient?: string;
+  htmlElements?: any[];
+  image?: File;
+}
+
+export interface ReorderDesignElementsRequest {
+  categoryId: string;
+  device: DeviceSize;
+  elementIds: string[];
 }
 
 export interface CreateHtmlElementRequest {
   designElementId: string;
-  htmlTag: any; // JSON object
+  htmlTag: any;
 }
 
 export interface UpdateHtmlElementRequest {
   id: string;
-  htmlTag: any; // JSON object
+  htmlTag: any;
 }
 
-export interface ReorderDesignElementsRequest {
-  categoryDesignId: string;
-  deviceSize: "mobile" | "tablet" | "desktop";
-  elementIds: string[];
-}
-
-// Redux state type
-export interface CategoryDesignsState {
-  currentDesign: CategoryDesign | null;
-  currentElement: DesignElement | null;
-  operations: {
-    createDesign: {
-      isLoading: boolean;
-      error: string | null;
-    };
-    updateDesign: {
-      isLoading: boolean;
-      error: string | null;
-    };
-    deleteDesign: {
-      isLoading: boolean;
-      error: string | null;
-    };
-    fetchDesign: {
-      isLoading: boolean;
-      error: string | null;
-    };
-    createElement: {
-      isLoading: boolean;
-      error: string | null;
-    };
-    updateElement: {
-      isLoading: boolean;
-      error: string | null;
-    };
-    deleteElement: {
-      isLoading: boolean;
-      error: string | null;
-    };
-    reorderElements: {
-      isLoading: boolean;
-      error: string | null;
-    };
-    createHtmlElement: {
-      isLoading: boolean;
-      error: string | null;
-    };
-    updateHtmlElement: {
-      isLoading: boolean;
-      error: string | null;
-    };
-    deleteHtmlElement: {
-      isLoading: boolean;
-      error: string | null;
-    };
-  };
+// Response Types
+export interface ApiResponse<T> {
+  status: string;
+  data: T;
 }
