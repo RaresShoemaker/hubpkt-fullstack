@@ -1,98 +1,118 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import { cn } from '../../../lib/utils';
-import ButtonBase from '../Buttons/ButtonBase';
-import { Edit, Trash2 } from 'lucide-react';
-import { useTheme } from '../../../store/features/ui/useUITheme';
 import { DesignElement } from '../../../store/features/categoryDesigns/categoryDesigns.types';
+import ButtonBase from '../Buttons/ButtonBase';
+import { Edit, Trash2, Code } from 'lucide-react';
 
 interface CategoryDesignCardProps {
-  element: DesignElement;
-  onEdit: (element: DesignElement) => void;
-  onDelete: (elementId: string) => void;
+  designElement: DesignElement;
+  onEdit: () => void;
+  onDelete: () => void;
+  isDark: boolean;
 }
 
 const CategoryDesignCard: React.FC<CategoryDesignCardProps> = ({
-  element,
+  designElement,
   onEdit,
-  onDelete
+  onDelete,
+  isDark
 }) => {
-  const { isDark } = useTheme();
-  
-  // Determine device size display value
-  const deviceSizeDisplay = element.deviceSize || (element as any).device || 'unknown';
-  
+  const hasHtmlElements = designElement.htmlElements && designElement.htmlElements.length > 0;
+
   return (
-    <div 
-      className={cn(
-        "border rounded-lg overflow-hidden shadow transition-shadow hover:shadow-md",
-        isDark ? "bg-dark-surface border-dark-border" : "bg-light-surface border-light-border"
-      )}
-    >
-      {/* Image preview */}
-      <div className="relative aspect-video">
-        <img 
-          src={element.url} 
-          alt={`Design element ${element.id}`}
-          className="w-full h-full object-cover"
+    <div className={cn(
+      "rounded-lg overflow-hidden border transition-all",
+      isDark 
+        ? "bg-dark-surface border-dark-border/30 hover:border-dark-border/50" 
+        : "bg-light-surface border-light-border/30 hover:border-light-border/50"
+    )}>
+      {/* Image preview with order badge */}
+      <div className="relative">
+        <img
+          src={designElement.image}
+          alt="Design element"
+          className="w-full h-40 object-cover"
         />
         
-        {/* Actions overlay */}
+        {/* Order badge */}
         <div className={cn(
-          "absolute inset-0 bg-black/50 opacity-0 hover:opacity-100 transition-opacity",
-          "flex items-center justify-center gap-3"
+          "absolute top-2 right-2 px-2 py-1 rounded-md text-sm font-medium",
+          isDark ? "bg-dark-surface/80 text-dark-text-primary" : "bg-light-surface/80 text-light-text-primary"
         )}>
+          Order: {designElement.order}
+        </div>
+      </div>
+
+      {/* Card content */}
+      <div className="p-4">
+        {/* Background Gradient */}
+        {designElement.backgroundGradient && (
+          <div className="mb-3">
+            <p className={cn(
+              "text-sm font-medium mb-1",
+              isDark ? "text-dark-text-secondary" : "text-light-text-secondary"
+            )}>
+              Background Gradient
+            </p>
+            <div 
+              className="h-8 rounded-md w-full"
+              style={{ background: designElement.backgroundGradient }}
+            ></div>
+          </div>
+        )}
+
+        {/* Transition Gradient */}
+        {designElement.transitionGradient && (
+          <div className="mb-3">
+            <p className={cn(
+              "text-sm font-medium mb-1",
+              isDark ? "text-dark-text-secondary" : "text-light-text-secondary"
+            )}>
+              Transition Gradient
+            </p>
+            <div 
+              className="h-8 rounded-md w-full"
+              style={{ background: designElement.transitionGradient }}
+            ></div>
+          </div>
+        )}
+
+        {/* HTML Elements badge */}
+        {hasHtmlElements && (
+          <div className={cn(
+            "inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium mb-3",
+            isDark 
+              ? "bg-dark-background text-dark-text-accent" 
+              : "bg-light-background text-light-text-accent"
+          )}>
+            <Code size={14} />
+            <span>{designElement.htmlElements.length} HTML elements</span>
+          </div>
+        )}
+
+        {/* Actions */}
+        <div className="flex justify-end gap-2 mt-2">
           <ButtonBase
             variant="ghost"
-            size="sm"
-            onClick={() => onEdit(element)}
-            leftIcon={<Edit size={16} className="text-white" />}
-            className="bg-black/50 text-white hover:bg-black/70"
+            onClick={onEdit}
+            className={cn("px-2 py-1")}
+            leftIcon={<Edit size={16} />}
           >
             Edit
           </ButtonBase>
+
           <ButtonBase
             variant="ghost"
-            size="sm"
-            onClick={() => onDelete(element.id)}
-            leftIcon={<Trash2 size={16} className="text-white" />}
-            className="bg-black/50 text-white hover:bg-black/70"
+            onClick={onDelete}
+            className={cn(
+              "px-2 py-1",
+              isDark ? "text-red-400 hover:text-red-300" : "text-red-500 hover:text-red-600"
+            )}
+            leftIcon={<Trash2 size={16} />}
           >
             Delete
           </ButtonBase>
         </div>
-      </div>
-      
-      {/* Info section */}
-      <div className="p-4">
-        <div className="flex justify-between items-center">
-          <div className={cn(
-            "px-2 py-1 rounded-md text-xs",
-            isDark ? "bg-dark-border/20" : "bg-light-border/20"
-          )}>
-            <span className={isDark ? "text-dark-text-secondary" : "text-light-text-secondary"}>
-              Order: {element.order}
-            </span>
-          </div>
-          
-          <div className={cn(
-            "px-2 py-1 rounded-md text-xs",
-            isDark 
-              ? "bg-dark-accent/10 text-dark-accent" 
-              : "bg-light-accent/10 text-light-accent"
-          )}>
-            {deviceSizeDisplay}
-          </div>
-        </div>
-        
-        {/* HTML Elements count */}
-        {element.htmlElements && element.htmlElements.length > 0 && (
-          <div className="mt-2 text-sm">
-            <span className={isDark ? "text-dark-text-secondary" : "text-light-text-secondary"}>
-              {element.htmlElements.length} HTML element{element.htmlElements.length !== 1 ? 's' : ''}
-            </span>
-          </div>
-        )}
       </div>
     </div>
   );
