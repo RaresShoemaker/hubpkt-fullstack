@@ -6,7 +6,8 @@ import {
   deleteDesignElement, 
   deleteHtmlElement, 
   fetchCategoryDesigns, 
-  fetchDesignElementsByDevice, 
+  fetchDesignElementsByDevice,
+  fetchDesignElementById, // Add the new import
   reorderDesignElements, 
   updateDesignElement, 
   updateHtmlElement 
@@ -48,6 +49,27 @@ const categoryDesignsSlice = createSlice({
       state.designs = action.payload;
     });
     builder.addCase(fetchCategoryDesigns.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
+
+    // Fetch design element by ID
+    builder.addCase(fetchDesignElementById.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(fetchDesignElementById.fulfilled, (state, action) => {
+      state.loading = false;
+      state.currentDesign = action.payload;
+      
+      // Add the element to the appropriate device array if it's not already there
+      const deviceKey = action.payload.device as keyof typeof state.designs;
+      const exists = state.designs[deviceKey].some(elem => elem.id === action.payload.id);
+      if (!exists) {
+        state.designs[deviceKey].push(action.payload);
+      }
+    });
+    builder.addCase(fetchDesignElementById.rejected, (state, action) => {
       state.loading = false;
       state.error = action.payload as string;
     });

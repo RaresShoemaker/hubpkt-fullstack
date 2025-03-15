@@ -1,33 +1,59 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { cn } from '../../../lib/utils';
 import { DesignElement } from '../../../store/features/categoryDesigns/categoryDesigns.types';
 import ButtonBase from '../Buttons/ButtonBase';
-import { Edit, Trash2, Code } from 'lucide-react';
+import { Edit, Trash2, Code, Eye } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useCategoryDesigns } from '../../../store/features/categoryDesigns/useCategoryDesigns';
 
 interface CategoryDesignCardProps {
   designElement: DesignElement;
-  onEdit: () => void;
+  onEdit: () => void; // We'll keep this for compatibility but implement our own navigation
   onDelete: () => void;
   isDark: boolean;
 }
 
 const CategoryDesignCard: React.FC<CategoryDesignCardProps> = ({
   designElement,
-  onEdit,
+  // onEdit,
   onDelete,
   isDark
 }) => {
+  const [isHovering, setIsHovering] = useState(false);
+  const navigate = useNavigate();
+  const { selectDesignElement } = useCategoryDesigns();
+  
   const hasHtmlElements = designElement.htmlElements && designElement.htmlElements.length > 0;
 
+  const handlePreview = () => {
+    // Set the current design element in the state
+    selectDesignElement(designElement);
+    // Navigate to the preview page
+    navigate(`/categorydesign/${designElement.id}`);
+  };
+  
+  const handleEdit = () => {
+    // Set the current design element in the state
+    selectDesignElement(designElement);
+    // Navigate to the editor page
+    navigate(`/categorydesign/${designElement.id}/edit`);
+  };
+
   return (
-    <div className={cn(
-      "rounded-lg overflow-hidden border transition-all",
-      isDark 
-        ? "bg-dark-surface border-dark-border/30 hover:border-dark-border/50" 
-        : "bg-light-surface border-light-border/30 hover:border-light-border/50"
-    )}>
+    <div 
+      className={cn(
+        "rounded-lg overflow-hidden border transition-all",
+        isDark 
+          ? "bg-dark-surface border-dark-border/30 hover:border-dark-border/50" 
+          : "bg-light-surface border-light-border/30 hover:border-light-border/50"
+      )}
+    >
       {/* Image preview with order badge */}
-      <div className="relative">
+      <div 
+        className="relative"
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
+      >
         <img
           src={designElement.image}
           alt="Design element"
@@ -41,6 +67,30 @@ const CategoryDesignCard: React.FC<CategoryDesignCardProps> = ({
         )}>
           Order: {designElement.order}
         </div>
+
+        {/* Hover overlay with action buttons */}
+        {isHovering && (
+          <div className={cn(
+            "absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black bg-opacity-50 transition-opacity",
+          )}>
+            <ButtonBase
+              variant="primary"
+              onClick={handleEdit}
+              leftIcon={<Edit size={16} />}
+              className="w-32"
+            >
+              Edit
+            </ButtonBase>
+            <ButtonBase
+              variant="secondary"
+              onClick={handlePreview}
+              leftIcon={<Eye size={16} />}
+              className="w-32"
+            >
+              Preview
+            </ButtonBase>
+          </div>
+        )}
       </div>
 
       {/* Card content */}
@@ -94,7 +144,7 @@ const CategoryDesignCard: React.FC<CategoryDesignCardProps> = ({
         <div className="flex justify-end gap-2 mt-2">
           <ButtonBase
             variant="ghost"
-            onClick={onEdit}
+            onClick={handleEdit}
             className={cn("px-2 py-1")}
             leftIcon={<Edit size={16} />}
           >

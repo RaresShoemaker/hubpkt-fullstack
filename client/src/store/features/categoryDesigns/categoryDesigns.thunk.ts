@@ -30,6 +30,21 @@ export const fetchCategoryDesigns = createAsyncThunk(
   }
 );
 
+// Fetch a single design element by ID
+export const fetchDesignElementById = createAsyncThunk(
+  'categoryDesigns/fetchDesignElementById',
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const response = await api.get<ApiResponse<DesignElement>>(
+        API_ENDPOINTS.categoryDesigns.getOne(id)
+      );
+      return response.data.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch design element');
+    }
+  }
+);
+
 // Fetch design elements for a category by device size
 export const fetchDesignElementsByDevice = createAsyncThunk(
   'categoryDesigns/fetchDesignElementsByDevice',
@@ -104,12 +119,13 @@ export const updateDesignElement = createAsyncThunk(
         formData.append('transitionGradient', data.transitionGradient);
       }
       
-      if (data.htmlElements) {
-        formData.append('htmlElements', JSON.stringify(data.htmlElements));
-      }
-      
       if (data.image) {
         formData.append('image', data.image);
+      }
+
+      // Add htmlElements handling - direct update from editor
+      if (data.htmlElements !== undefined) {
+        formData.append('htmlElements', JSON.stringify(data.htmlElements));
       }
 
       const response = await api.patch<ApiResponse<DesignElement>>(

@@ -70,7 +70,7 @@ export interface UpdateDesignElementRequest {
   order?: number;
   backgroundGradient?: string;
   transitionGradient?: string;
-  htmlElements?: any[];
+  htmlElements?: any[]; // Updated to include htmlElements for direct updates
   image?: File;
 }
 
