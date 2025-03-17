@@ -60,7 +60,6 @@ const categoryDesignsSlice = createSlice({
 		});
 		builder.addCase(fetchDesignById.fulfilled, (state, action) => {
 			state.loading = false;
-			console.log(action.payload);
 			state.currentDesign = action.payload;
 		});
 		builder.addCase(fetchDesignById.rejected, (state, action) => {

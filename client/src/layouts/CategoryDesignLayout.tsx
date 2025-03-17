@@ -22,7 +22,7 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
   const navigate = useNavigate();
   
   // Category design state
-  const { currentDesign, editDesignElement, addHtmlElement, loading, error } = useCategoryDesigns();
+  const { currentDesign, getDesignById, editDesignElement, addHtmlElement, removeHtmlElement, loading, error } = useCategoryDesigns();
   
   // Local state for draggable elements
   const [draggableElements, setDraggableElements] = useState<{[id: string]: DraggableButtonData}>({});
@@ -51,6 +51,34 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
     setDraggableElements(initialDraggableElements);
     setHasUnsavedChanges(false);
   }, [htmlElements]);
+
+  // Update draggable elements when currentDesign changes (after a refresh)
+  useEffect(() => {
+    if (currentDesign && currentDesign.htmlElements) {
+      const updatedDraggableElements: {[id: string]: DraggableButtonData} = {};
+      
+      // Process all HTML elements from the current design
+      currentDesign.htmlElements.forEach(element => {
+        if (element.htmlTag.type === 'button') {
+          // Parse position from string to x, y coordinates
+          const position = parsePositionFromGridClasses(element.htmlTag.position || '');
+          
+          updatedDraggableElements[element.id] = {
+            text: element.htmlTag.text || '',
+            link: element.htmlTag.link || '',
+            style: element.htmlTag.style || 'secondary',
+            position
+          };
+        }
+      });
+      
+      // Only update if it's different to avoid infinite loops
+      if (JSON.stringify(Object.keys(updatedDraggableElements)) !== 
+          JSON.stringify(Object.keys(draggableElements))) {
+        setDraggableElements(updatedDraggableElements);
+      }
+    }
+  }, [currentDesign]);
   
   // Helper function to parse grid position classes to x,y coordinates
   const parsePositionFromGridClasses = (positionClass: string): Position => {
@@ -82,7 +110,7 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
     const colStart = Math.floor((position.x / 100) * 12) + 1;
     const rowStart = Math.floor((position.y / 100) * 6) + 1;
     
-    return `col-start-${colStart} col-span-3 row-start-${rowStart} row-span-1`;
+    return `col-start-${colStart} col-span-2 row-start-${rowStart} row-span-1`;
   };
   
   // Handle element position changes (just update local state, don't save to API yet)
@@ -164,14 +192,20 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
   };
 
   // Handle removing a button
-  const handleRemoveButton = (elementId: string) => {
+  const handleRemoveButton = (elementId: string) => {    
+    if (!elementId.startsWith('new-')) {
+      removeHtmlElement(elementId);
+    }
+
+    setHasUnsavedChanges(true);
+
+    // Remove from the draggable elements state
     setDraggableElements(prev => {
       const newState = { ...prev };
       delete newState[elementId];
       return newState;
     });
-    
-    setHasUnsavedChanges(true);
+
   };
   
   // Save all changes to the API
@@ -184,47 +218,68 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
     setIsSaving(true);
     
     try {
-      // Convert local draggable elements to HTML elements format expected by the API
-      const updatedHtmlElements = Object.entries(draggableElements).map(([id, element]) => {
+      // Step 1: First update the basic design element properties (without HTML elements)
+      await editDesignElement({
+        id: currentDesign.id,
+        backgroundGradient: currentDesign.backgroundGradient,
+        transitionGradient: currentDesign.transitionGradient
+      });
+      
+      // Step 2: Process all draggable elements - separate new and existing elements
+      const existingElements = [];
+      const newElements = [];
+      
+      for (const [id, element] of Object.entries(draggableElements)) {
         const gridPosition = convertPositionToGridClasses(element.position);
         
-        // For existing elements, use their ID
         if (id.startsWith('new-')) {
-          // New element being created, no ID yet
-          return {
+          // Collect new elements to be created
+          newElements.push({
             type: 'button',
             text: element.text,
-            link: element.link,
-            style: element.style,
+            link: element.link || '#',
+            style: element.style || 'primary',
             position: gridPosition
-          };
+          });
         } else {
-          // Existing element being updated
-          return {
+          // Collect existing elements to be updated
+          existingElements.push({
             id,
             type: 'button',
             text: element.text,
-            link: element.link,
-            style: element.style,
+            link: element.link || '#',
+            style: element.style || 'primary',
             position: gridPosition
-          };
+          });
         }
-      });
-
-
+      }
       
-
+      // Step 3: Handle existing elements using editDesignElement if there are any
+      if (existingElements.length > 0) {
+        await editDesignElement({
+          id: currentDesign.id,
+          htmlElements: existingElements
+        });
+      }
       
-      // Send update to API with all HTML elements
-      await editDesignElement({
-        id: currentDesign.id,
-        htmlElements: updatedHtmlElements
-      });
+      // Step 4: Create new HTML elements individually using addHtmlElement
+      for (const element of newElements) {
+        await addHtmlElement({
+          designElementId: currentDesign.id,
+          htmlTag: element
+        });
+      }
       
+      // Success - update state
       setHasUnsavedChanges(false);
       
-      // Show success message or navigate back
-      // navigate(-1); // Uncomment to navigate back after save
+      // Refresh the design to show updated elements and clear any stale state
+      await getDesignById(currentDesign.id);
+      
+      // Temporarily clear draggable elements to prevent duplicates
+      // The useEffect for currentDesign will repopulate it with fresh data
+      setDraggableElements({});
+      
     } catch (err) {
       console.error('Error saving design elements:', err);
     } finally {
