@@ -80,10 +80,6 @@ export const CategoryDesignForm: React.FC<CategoryDesignFormProps> = ({
     setImageFile(file);
   };
 
-  const handleHtmlElementsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setHtmlElementsJson(e.target.value);
-  };
-
   const validateHtmlElements = () => {
     try {
       if (htmlElementsJson.trim() === '') return [];
@@ -272,7 +268,6 @@ export const CategoryDesignForm: React.FC<CategoryDesignFormProps> = ({
             label="Design Image"
             name="designImage"
             required={!currentDesign}
-            helperText="Recommended size: 1920 x 1080px"
             onChange={handleImageChange}
             preview={currentDesign?.image}
             accept="image/*"
@@ -280,33 +275,6 @@ export const CategoryDesignForm: React.FC<CategoryDesignFormProps> = ({
         </div>
 
         {/* HTML Elements (JSON) */}
-        <div className="mb-4">
-          <label className={cn(
-            "block mb-2 text-sm font-medium",
-            isDark ? "text-dark-text-primary" : "text-light-text-primary"
-          )}>
-            HTML Elements (JSON format)
-          </label>
-          <textarea
-            name="htmlElements"
-            value={htmlElementsJson}
-            onChange={handleHtmlElementsChange}
-            rows={5}
-            className={cn(
-              "w-full p-2 rounded-md border font-mono text-sm",
-              isDark 
-                ? "bg-dark-input border-dark-border text-dark-text-primary" 
-                : "bg-light-input border-light-border text-light-text-primary"
-            )}
-            placeholder="[{ 'type': 'button', 'text': 'Shop Now', 'link': '/products' }]"
-          />
-          <p className={cn(
-            "mt-1 text-xs",
-            isDark ? "text-dark-text-secondary" : "text-light-text-secondary"
-          )}>
-            Enter interactive elements as JSON array
-          </p>
-        </div>
 
         {/* Form Actions */}
         <div className="flex justify-end gap-3 mt-6">

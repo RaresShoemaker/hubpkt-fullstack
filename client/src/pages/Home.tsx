@@ -8,7 +8,7 @@ const HomePage: React.FC = () => {
 	return (
 		<MainLayout
 			menu={<MenuCategory />}
-			heroContainer={<Hero />}
+			heroContainer={<Hero  />}
 			background={
 				<div className='bg-gradient-to-br bg-[#090D23] w-full h-full'>
 					{/* Main background for the entire page */}

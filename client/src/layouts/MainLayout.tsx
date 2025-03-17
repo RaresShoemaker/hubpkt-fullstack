@@ -36,7 +36,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         </div>
 
         {/* Main content wrapper */}
-        <div className='flex flex-col flex-grow z-10'>
+        <div className='flex flex-col flex-grow z-10 overflow-x-hidden'>
           {/* Hero Container (fixed height) */}
           {heroContainer && (
             <div className='w-full z-[5] h-[70vh] md:h-[52vh] pt-16 lg:pt-0'>
@@ -45,7 +45,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
           )}
 
           {backgroundTransition && (
-            <div className='w-full z-[5] h-[200px] relative flex justify-center overflow-hidden'>
+            <div className='w-full z-[5] h-[200px] isolate relative justify-center '>
               {backgroundTransition}
             </div>
           )}
