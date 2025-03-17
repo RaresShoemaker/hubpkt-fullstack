@@ -1,6 +1,6 @@
-// src/components/CategoryDesign/CategoryDesignLayout.tsx
 import React, { useState, useRef, useEffect } from 'react';
-import { DraggableButtonData, HtmlElement } from '../components/Admin/Category/CategoryDesign/types';
+import { useNavigate } from 'react-router-dom';
+import { DraggableButtonData } from '../components/Admin/Category/CategoryDesign/types';
 import Hero from '../components/Hero/Hero';
 import HeroElements from '../components/Hero/HeroElements';
 import BlurTransition from '../components/BlurTransition';
@@ -8,16 +8,26 @@ import BackgroundTransition from '../components/BackgroundTransition';
 import DraggableButton from '../components/Admin/Category/CategoryDesign/DraggableButton';
 import ButtonFactory from '../components/Admin/Category/CategoryDesign/ButtonFactory';
 import { CategoryDesignLayoutProps, Position } from '../components/Admin/Category/CategoryDesign/types';
+import { useCategoryDesigns } from '../store/features/categoryDesigns/useCategoryDesigns';
+import ButtonBase from '../components/Admin/Buttons/ButtonBase';
+import { Save, ArrowLeft } from 'lucide-react';
 
 const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
   heroImage,
   backgroundGradient,
   transitionGradient,
   htmlElements = [],
-  onUpdateElements
 }) => {
-  // Internal state to track draggable elements separately from the HtmlElements structure
+  // Navigation
+  const navigate = useNavigate();
+  
+  // Category design state
+  const { currentDesign, editDesignElement, addHtmlElement, loading, error } = useCategoryDesigns();
+  
+  // Local state for draggable elements
   const [draggableElements, setDraggableElements] = useState<{[id: string]: DraggableButtonData}>({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
   
   // Initialize draggable elements from htmlElements on first render
@@ -27,7 +37,6 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
     htmlElements.forEach(element => {
       if (element.htmlTag.type === 'button') {
         // Parse position from string "col-start-X col-end-Y row-start-Z row-end-W" to x, y coordinates
-        // This is a simplified conversion - you may need to adapt this to your actual grid system
         const position = parsePositionFromGridClasses(element.htmlTag.position || '');
         
         initialDraggableElements[element.id] = {
@@ -40,13 +49,11 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
     });
     
     setDraggableElements(initialDraggableElements);
-  }, []);
+    setHasUnsavedChanges(false);
+  }, [htmlElements]);
   
   // Helper function to parse grid position classes to x,y coordinates
   const parsePositionFromGridClasses = (positionClass: string): Position => {
-    // This is a simplified implementation - adapt to your grid system
-    // Example: "col-start-2 col-end-5 row-start-3 row-end-4" 
-    // would be converted to { x: (2-1)/12*100, y: (3-1)/6*100 }
     try {
       const colStartMatch = positionClass.match(/col-start-(\d+)/);
       const rowStartMatch = positionClass.match(/row-start-(\d+)/);
@@ -72,52 +79,13 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
   // Helper function to convert x,y coordinates to grid position classes
   const convertPositionToGridClasses = (position: Position): string => {
     // Convert percentage positions back to grid coordinates
-    // This is a simplified implementation - adapt to your grid system
     const colStart = Math.floor((position.x / 100) * 12) + 1;
-    const colEnd = colStart + 3; // Assuming buttons span 3 columns
     const rowStart = Math.floor((position.y / 100) * 6) + 1;
-    const rowEnd = rowStart + 1; // Assuming buttons span 1 row
     
-    return `col-start-${colStart} col-end-${colEnd} row-start-${rowStart} row-end-${rowEnd}`;
+    return `col-start-${colStart} col-span-3 row-start-${rowStart} row-span-1`;
   };
   
-  // Update the parent component when elements change
-  const syncToHtmlElements = () => {
-    if (!onUpdateElements) return;
-    
-    // Create a deep copy of htmlElements to modify
-    const updatedElements = htmlElements.map(element => {
-      // If this element has a draggable counterpart, update its position
-      if (draggableElements[element.id]) {
-        const draggable = draggableElements[element.id];
-        const gridPosition = convertPositionToGridClasses(draggable.position);
-        
-        // Return a new element with updated htmlTag
-        return {
-          ...element,
-          htmlTag: {
-            ...element.htmlTag,
-            text: draggable.text,
-            link: draggable.link,
-            style: draggable.style,
-            position: gridPosition
-          }
-        };
-      }
-      
-      // If no changes, return original element
-      return element;
-    });
-    
-    onUpdateElements(updatedElements);
-  };
-  
-  // Call syncToHtmlElements whenever draggableElements changes
-  useEffect(() => {
-    syncToHtmlElements();
-  }, [draggableElements]);
-  
-  // Handle element position changes
+  // Handle element position changes (just update local state, don't save to API yet)
   const handlePositionChange = (elementId: string, newPosition: Position) => {
     setDraggableElements(prev => ({
       ...prev,
@@ -126,6 +94,7 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
         position: newPosition
       }
     }));
+    setHasUnsavedChanges(true);
   };
   
   // Handle dropping new elements onto the hero
@@ -150,7 +119,7 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
       const constrainedX = Math.max(0, Math.min(percentX, 100 - buttonWidthPercent));
       const constrainedY = Math.max(0, Math.min(percentY, 100 - buttonHeightPercent));
       
-      // Generate a unique ID for the new element
+      // Generate a unique ID for the new element (temporary ID for local state only)
       const newElementId = `new-${Date.now()}`;
       
       // Add to draggable elements
@@ -164,25 +133,7 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
         }
       }));
       
-      // Create a new HtmlElement and add it to htmlElements
-      const newHtmlElement: HtmlElement = {
-        id: newElementId,
-        designElementId: `design-${Date.now()}`,
-        htmlTag: {
-          type: 'button',
-          text: buttonData.text,
-          link: buttonData.link,
-          style: buttonData.style,
-          position: convertPositionToGridClasses({ x: constrainedX, y: constrainedY })
-        },
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      
-      // If onUpdateElements is provided, add the new element
-      if (onUpdateElements) {
-        onUpdateElements([...htmlElements, newHtmlElement]);
-      }
+      setHasUnsavedChanges(true);
     } catch (error) {
       console.error('Error processing dropped item:', error);
     }
@@ -197,7 +148,7 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
     // Default position for new buttons
     const position = { x: 10, y: 40 };
     
-    // Generate a unique ID for the new element
+    // Generate a unique ID for the new element (temporary ID for local state only)
     const newElementId = `new-${Date.now()}`;
     
     // Add to draggable elements
@@ -209,44 +160,111 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
       }
     }));
     
-    // Create a new HtmlElement and add it to htmlElements
-    const newHtmlElement: HtmlElement = {
-      id: newElementId,
-      designElementId: `design-${Date.now()}`,
-      htmlTag: {
-        type: 'button',
-        text: buttonData.text,
-        link: buttonData.link,
-        style: buttonData.style,
-        position: convertPositionToGridClasses(position)
-      },
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    // If onUpdateElements is provided, add the new element
-    if (onUpdateElements) {
-      onUpdateElements([...htmlElements, newHtmlElement]);
-    }
+    setHasUnsavedChanges(true);
   };
 
   // Handle removing a button
   const handleRemoveButton = (elementId: string) => {
-    // Remove from draggable elements
     setDraggableElements(prev => {
       const newState = { ...prev };
       delete newState[elementId];
       return newState;
     });
     
-    // Remove from htmlElements
-    if (onUpdateElements) {
-      onUpdateElements(htmlElements.filter(element => element.id !== elementId));
+    setHasUnsavedChanges(true);
+  };
+  
+  // Save all changes to the API
+  const handleSave = async () => {
+    if (!currentDesign) {
+      console.error('No current design to save changes to');
+      return;
+    }
+    
+    setIsSaving(true);
+    
+    try {
+      // Convert local draggable elements to HTML elements format expected by the API
+      const updatedHtmlElements = Object.entries(draggableElements).map(([id, element]) => {
+        const gridPosition = convertPositionToGridClasses(element.position);
+        
+        // For existing elements, use their ID
+        if (id.startsWith('new-')) {
+          // New element being created, no ID yet
+          return {
+            type: 'button',
+            text: element.text,
+            link: element.link,
+            style: element.style,
+            position: gridPosition
+          };
+        } else {
+          // Existing element being updated
+          return {
+            id,
+            type: 'button',
+            text: element.text,
+            link: element.link,
+            style: element.style,
+            position: gridPosition
+          };
+        }
+      });
+
+
+      
+
+      
+      // Send update to API with all HTML elements
+      await editDesignElement({
+        id: currentDesign.id,
+        htmlElements: updatedHtmlElements
+      });
+      
+      setHasUnsavedChanges(false);
+      
+      // Show success message or navigate back
+      // navigate(-1); // Uncomment to navigate back after save
+    } catch (err) {
+      console.error('Error saving design elements:', err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleBack = () => {
+    if (hasUnsavedChanges) {
+      if (confirm('You have unsaved changes. Are you sure you want to leave?')) {
+        navigate(-1);
+      }
+    } else {
+      navigate(-1);
     }
   };
   
   return (
     <div className='relative'>
+      {/* Header with back button and save button */}
+      <div className="fixed top-0 left-0 right-0 z-20 p-4 flex justify-between items-center">
+        <ButtonBase
+          onClick={handleBack}
+          leftIcon={<ArrowLeft size={20} />}
+          variant="secondary"
+        >
+          Back
+        </ButtonBase>
+        
+        <ButtonBase
+          onClick={handleSave}
+          leftIcon={<Save size={20} />}
+          variant={hasUnsavedChanges ? "primary" : "secondary"}
+          isLoading={isSaving}
+          disabled={!hasUnsavedChanges || loading}
+        >
+          Save Changes
+        </ButtonBase>
+      </div>
+      
       <div className='w-full min-h-screen flex flex-col'>
         {/* Background (covers entire layout) */}
         <div className='fixed inset-0 z-0'>
@@ -285,16 +303,11 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
               <BlurTransition color={transitionGradient} blur={40} className='bottom-0 h-[230px]' />
             </div>
           )}
-
-          {/* Main Content */}
-          <div className='flex-grow z-[5] pt-16 lg:pt-0 lg:ml-[300px]'>
-            {/* Button Factory content would go here */}
-          </div>
         </div>
         
         {/* Sidebar with Button Factory */}
         <div className='fixed top-0 left-0 bottom-0 z-[10] py-4 px-3 hidden lg:block w-[300px]'>
-          <div className='h-screen overflow-y-auto pb-48'>
+          <div className='h-screen overflow-y-auto pb-48 pt-16'>
             <div className='h-full md:hidden lg:w-full rounded-2xl bg-[#1B1B1B] px-4 py-6 lg:flex flex-col justify-between hidden shadow-[0_0_40px_0_rgba(62,74,192,0.24)]'>
               <h2 className="text-white text-xl font-bold mb-6">Design Tools</h2>
               
@@ -318,6 +331,24 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
                     </div>
                   ))}
                 </div>
+              </div>
+              
+              {/* Save button in sidebar */}
+              <div className="mt-6">
+                <ButtonBase
+                  onClick={handleSave}
+                  leftIcon={<Save size={20} />}
+                  variant={hasUnsavedChanges ? "primary" : "secondary"}
+                  isLoading={isSaving}
+                  disabled={!hasUnsavedChanges || loading}
+                  className="w-full"
+                >
+                  Save Changes
+                </ButtonBase>
+                
+                {error && (
+                  <p className="text-red-400 text-sm mt-2">{error}</p>
+                )}
               </div>
             </div>
           </div>

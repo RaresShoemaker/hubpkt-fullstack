@@ -1,5 +1,3 @@
-// src/api/endpoints.ts (Updated)
-
 export const API_ENDPOINTS = {
   auth: {
     me: '/user',
@@ -53,6 +51,7 @@ export const API_ENDPOINTS = {
     deleteElement: (id: string) => `/category-designs/elements/${id}`,
     getElementsByDeviceSize: (categoryId: string) => `/category-designs/elements/category/${categoryId}`,
     reorderElements: (categoryId: string) => `/category-designs/elements/${categoryId}/reorder`,
+    getCategoryDesignById: (id: string) => `/category-designs/design/${id}`,
     
     // HTML Element endpoints
     createHtmlElement: '/category-designs/html-elements',

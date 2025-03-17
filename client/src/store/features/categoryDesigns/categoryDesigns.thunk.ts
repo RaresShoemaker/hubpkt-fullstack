@@ -30,6 +30,21 @@ export const fetchCategoryDesigns = createAsyncThunk(
   }
 );
 
+export const fetchDesignById = createAsyncThunk(
+  'categoryDesigns/fetchDesignById',
+  async (id: string, { rejectWithValue }) => {
+    try {
+      const response = await api.get(
+        API_ENDPOINTS.categoryDesigns.getCategoryDesignById(id)
+      );
+
+      return response.data.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.message || 'Failed to fetch category designs');
+    }
+  }
+);
+
 // Fetch a single design element by ID
 export const fetchDesignElementById = createAsyncThunk(
   'categoryDesigns/fetchDesignElementById',

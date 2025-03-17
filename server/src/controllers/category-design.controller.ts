@@ -242,3 +242,13 @@ export const deleteHtmlElement = catchAsync(async (req: Request, res: Response) 
 
   res.status(StatusCodes.NO_CONTENT).send();
 });
+
+export const getCategoryDesignById = catchAsync(async (req: Request, res: Response) => {
+  const { id } = req.params;
+  const design = await CategoryDesignService.getCategoryDesignById(id);
+
+  res.status(StatusCodes.OK).json({
+    status: 'success',
+    data: design
+  });
+})

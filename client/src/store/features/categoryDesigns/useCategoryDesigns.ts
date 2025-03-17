@@ -20,7 +20,8 @@ import {
   reorderDesignElements, 
   updateDesignElement, 
   updateHtmlElement,
-  fetchDesignElementById 
+  fetchDesignElementById, 
+  fetchDesignById
 } from './categoryDesigns.thunk';
 
 export const useCategoryDesigns = () => {
@@ -120,6 +121,13 @@ export const useCategoryDesigns = () => {
     dispatch(clearCategoryDesigns());
   }, [dispatch]);
 
+  const getDesignById = useCallback(
+    (id: string) => {
+      return dispatch(fetchDesignById(id));
+    },
+    [dispatch]
+  );
+
   return {
     // State
     designs,
@@ -128,6 +136,7 @@ export const useCategoryDesigns = () => {
     error,
     
     // Actions
+    getDesignById,
     fetchDesigns,
     fetchDesignsByDevice,
     fetchDesignElementById: getDesignElementById, // Return with the original name but using the new function

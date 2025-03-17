@@ -1,4 +1,3 @@
-// src/components/CategoryDesign/DraggableButton.tsx
 import React, { useState, useRef, useEffect } from 'react';
 import ButtonHero from '../../../Hero/HeroButton';
 import { DraggableButtonProps, Position } from './types';
