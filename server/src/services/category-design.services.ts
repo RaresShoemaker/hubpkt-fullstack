@@ -397,3 +397,16 @@ export async function getDesignElementsByCategory(categoryId: string) {
     throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, `Failed to get design elements: ${error.message}`);
   }
 }
+
+export const getCategoryDesignById = async (id: string) => {
+  const design = await prisma.designElement.findUnique({
+    where: { id },
+    include: {
+      category: true,
+      imageMetadata: true,
+      htmlElements: true
+    }
+});
+
+  return design;
+}

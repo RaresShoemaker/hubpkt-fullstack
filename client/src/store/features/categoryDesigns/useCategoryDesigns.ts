@@ -19,7 +19,9 @@ import {
   fetchDesignElementsByDevice, 
   reorderDesignElements, 
   updateDesignElement, 
-  updateHtmlElement 
+  updateHtmlElement,
+  fetchDesignElementById, 
+  fetchDesignById
 } from './categoryDesigns.thunk';
 
 export const useCategoryDesigns = () => {
@@ -42,6 +44,14 @@ export const useCategoryDesigns = () => {
     [dispatch]
   );
 
+  // Fetch a single design element by ID
+  const getDesignElementById = useCallback(  // Renamed this function
+    (id: string) => {
+      return dispatch(fetchDesignElementById(id));
+    },
+    [dispatch]
+  );
+
   // Create a new design element
   const addDesignElement = useCallback(
     (data: CreateDesignElementRequest) => {
@@ -52,7 +62,7 @@ export const useCategoryDesigns = () => {
 
   // Update a design element
   const editDesignElement = useCallback(
-    (data: UpdateDesignElementRequest) => {
+    (data: UpdateDesignElementRequest) => {  // Fixed the type here
       return dispatch(updateDesignElement(data));
     },
     [dispatch]
@@ -84,7 +94,7 @@ export const useCategoryDesigns = () => {
 
   // Create a new HTML element
   const addHtmlElement = useCallback(
-    (data: CreateHtmlElementRequest) => {
+    (data: CreateHtmlElementRequest) => {  // Fixed the type here
       return dispatch(createHtmlElement(data));
     },
     [dispatch]
@@ -92,7 +102,7 @@ export const useCategoryDesigns = () => {
 
   // Update an HTML element
   const editHtmlElement = useCallback(
-    (data: UpdateHtmlElementRequest) => {
+    (data: UpdateHtmlElementRequest) => {  // Fixed the type here
       return dispatch(updateHtmlElement(data));
     },
     [dispatch]
@@ -111,6 +121,13 @@ export const useCategoryDesigns = () => {
     dispatch(clearCategoryDesigns());
   }, [dispatch]);
 
+  const getDesignById = useCallback(
+    (id: string) => {
+      return dispatch(fetchDesignById(id));
+    },
+    [dispatch]
+  );
+
   return {
     // State
     designs,
@@ -119,8 +136,10 @@ export const useCategoryDesigns = () => {
     error,
     
     // Actions
+    getDesignById,
     fetchDesigns,
     fetchDesignsByDevice,
+    fetchDesignElementById: getDesignElementById, // Return with the original name but using the new function
     addDesignElement,
     editDesignElement,
     removeDesignElement,

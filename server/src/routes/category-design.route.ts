@@ -30,6 +30,8 @@ router.delete('/elements/:id', verifyAuth, CategoryDesignController.deleteDesign
 router.get('/elements/category/:categoryId', CategoryDesignController.getDesignElementsByDeviceSize);
 router.post('/elements/category/:categoryId/reorder', verifyAuth, CategoryDesignController.reorderDesignElements);
 
+router.get('/design/:id',verifyAuth, CategoryDesignController.getCategoryDesignById);
+
 // HTML Element routes
 router.post('/html-elements', verifyAuth, CategoryDesignController.createHtmlElement);
 router.patch('/html-elements/:id', verifyAuth, CategoryDesignController.updateHtmlElement);

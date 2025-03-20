@@ -1,5 +1,3 @@
-// src/api/endpoints.ts (Updated)
-
 export const API_ENDPOINTS = {
   auth: {
     me: '/user',
@@ -42,7 +40,7 @@ export const API_ENDPOINTS = {
   categoryDesigns: {
     // Category Design endpoints
     create: '/category-designs',
-    getOne: (id: string) => `/category-designs/${id}`,
+    getOne: (id: string) => `/category-designs/elements/${id}`,
     getByCategory: (categoryId: string) => `/category-designs/category/${categoryId}`,
     update: (id: string) => `/category-designs/${id}`,
     delete: (id: string) => `/category-designs/${id}`,
@@ -52,7 +50,8 @@ export const API_ENDPOINTS = {
     updateElement: (id: string) => `/category-designs/elements/${id}`,
     deleteElement: (id: string) => `/category-designs/elements/${id}`,
     getElementsByDeviceSize: (categoryId: string) => `/category-designs/elements/category/${categoryId}`,
-    reorderElements: (categoryDesignId: string) => `/category-designs/elements/${categoryDesignId}/reorder`,
+    reorderElements: (categoryId: string) => `/category-designs/elements/${categoryId}/reorder`,
+    getCategoryDesignById: (id: string) => `/category-designs/design/${id}`,
     
     // HTML Element endpoints
     createHtmlElement: '/category-designs/html-elements',

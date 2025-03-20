@@ -4,7 +4,7 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { store } from './store/store';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { HomePage, SubmissionPage, CreatorsHubPage, AuthenticationPage, DashboardPage } from './pages/index';
+import { HomePage, SubmissionPage, CreatorsHubPage, AuthenticationPage, DashboardPage, CategoryDesignPage } from './pages/index';
 import SubmissionLayout from './layouts/SubmissionLayout';
 import AnalyticsTracker from './components/AnalyticsTracker';
 import { ThemeProvider } from './components/Admin/Theme/ThemeProvider';
@@ -39,6 +39,18 @@ const App: React.FC = () => {
 								<ProtectedRoute>
 									<ThemeProvider>
 										<DashboardPage />
+									</ThemeProvider>
+								</ProtectedRoute>
+							}
+						/>
+
+						{/* Preview route */}
+						<Route
+							path='/categorydesign/:id'
+							element={
+								<ProtectedRoute>
+									<ThemeProvider>
+										<CategoryDesignPage />
 									</ThemeProvider>
 								</ProtectedRoute>
 							}
