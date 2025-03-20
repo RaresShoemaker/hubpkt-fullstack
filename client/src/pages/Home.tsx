@@ -9,7 +9,7 @@ const HomePage: React.FC = () => {
 		<MainLayout
 			menu={<MenuCategory />}
 			heroContainer={
-				<Hero image=''>
+				<Hero image='./Home1.jpg'>
 				
 				</Hero>}
 			background={

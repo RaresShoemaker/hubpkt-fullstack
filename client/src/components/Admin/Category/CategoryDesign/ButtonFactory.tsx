@@ -1,40 +1,45 @@
 import React, { useState } from 'react';
-import ButtonHero from '../../../Hero/HeroButton';
-import { ButtonFactoryProps } from './types';
+import ButtonHero, { ButtonStyle } from '../../../Hero/HeroButton';
 
-const ButtonFactory: React.FC<ButtonFactoryProps> = ({ onButtonCreate }) => {
-  const [buttonType, setButtonType] = useState<'primary' | 'secondary'>('primary');
-  const [buttonText, setButtonText] = useState<string>('Shop Now');
-  const [buttonLink, setButtonLink] = useState<string>('/shop');
+interface ButtonFactoryProps {
+  onCreateButton: (buttonData: { text: string; style: ButtonStyle; link: string }) => void;
+}
+
+const ButtonFactory: React.FC<ButtonFactoryProps> = ({ onCreateButton }) => {
+  const [buttonText, setButtonText] = useState<string>('Learn More');
+  const [buttonStyle, setButtonStyle] = useState<ButtonStyle>('primary');
+  const [buttonLink, setButtonLink] = useState<string>('#');
   
-  const createButton = () => {
-    onButtonCreate({
-      link: buttonLink,
+  const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setButtonText(e.target.value);
+  };
+
+  const handleStyleChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    setButtonStyle(e.target.value as ButtonStyle);
+  };
+
+  const handleLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setButtonLink(e.target.value);
+  };
+  
+  const handleCreateButton = () => {
+    onCreateButton({
       text: buttonText,
-      style: buttonType,
+      style: buttonStyle,
+      link: buttonLink
     });
   };
 
-  const handleDragStart = (e: React.DragEvent) => {
-    // Store the button data in the drag event
-    e.dataTransfer.setData('application/json', JSON.stringify({
-      link: buttonLink,
-      text: buttonText,
-      type: 'button' as const,
-      style: buttonType
-    }));
-  };
-  
   return (
     <div className="p-4 bg-gray-800 rounded-lg">
-      <h3 className="text-white font-medium mb-4">Button Factory</h3>
+      <h3 className="text-white font-medium mb-4">Create Button</h3>
       
       <div className="mb-3">
         <label className="text-white text-sm block mb-1">Button Text</label>
         <input 
           type="text" 
           value={buttonText} 
-          onChange={(e) => setButtonText(e.target.value)}
+          onChange={handleTextChange}
           className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600"
         />
       </div>
@@ -44,7 +49,7 @@ const ButtonFactory: React.FC<ButtonFactoryProps> = ({ onButtonCreate }) => {
         <input 
           type="text" 
           value={buttonLink} 
-          onChange={(e) => setButtonLink(e.target.value)}
+          onChange={handleLinkChange}
           className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600"
         />
       </div>
@@ -52,8 +57,8 @@ const ButtonFactory: React.FC<ButtonFactoryProps> = ({ onButtonCreate }) => {
       <div className="mb-4">
         <label className="text-white text-sm block mb-1">Button Style</label>
         <select 
-          value={buttonType} 
-          onChange={(e) => setButtonType(e.target.value as 'primary' | 'secondary')}
+          value={buttonStyle} 
+          onChange={handleStyleChange}
           className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600"
         >
           <option value="primary">Primary</option>
@@ -61,25 +66,20 @@ const ButtonFactory: React.FC<ButtonFactoryProps> = ({ onButtonCreate }) => {
         </select>
       </div>
       
-      <div className="space-y-4">
+      <div>
         <button 
-          onClick={createButton}
-          className="w-full px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors"
+          onClick={handleCreateButton}
+          className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
         >
-          Add to Hero
+          Create Button
         </button>
         
         <div className="mt-4">
           <p className="text-white text-sm mb-2">Preview:</p>
-          <div 
-            className="w-full cursor-move"
-            draggable
-            onDragStart={handleDragStart}
-          >
+          <div className="w-full">
             <ButtonHero 
-              style={buttonType}
+              style={buttonStyle}
               text={buttonText}
-              link={undefined} // No link in preview
             />
           </div>
         </div>
