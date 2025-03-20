@@ -86,7 +86,6 @@ export const CategoryDesignForm: React.FC<CategoryDesignFormProps> = ({
       const parsed = JSON.parse(htmlElementsJson);
       return Array.isArray(parsed) ? parsed : [];
     } catch (e: any) {
-      console.log(e)
       return null; // Invalid JSON
     }
   };

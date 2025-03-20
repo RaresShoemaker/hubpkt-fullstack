@@ -71,7 +71,7 @@ const ButtonFactory: React.FC<ButtonFactoryProps> = ({ onCreateButton }) => {
           onClick={handleCreateButton}
           className="w-full px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
         >
-          Create Button
+          Create Element
         </button>
         
         <div className="mt-4">

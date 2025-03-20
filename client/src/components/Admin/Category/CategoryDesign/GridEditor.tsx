@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '../../../../lib/utils';
 import ButtonHero, { ButtonStyle } from '../../../Hero/HeroButton';
 import HeroImage from '../../../Hero/HeroImage';
+import { useNavigate } from 'react-router-dom';
 
 interface Position {
   colStart: number;
@@ -11,11 +12,16 @@ interface Position {
 }
 
 interface ButtonElementData {
-  id: string;
-  text: string;
-  link: string;
-  style: ButtonStyle;
-  position: Position;
+	id: string;
+	text: string;
+	link: string;
+	style: ButtonStyle;
+	position: {
+		colStart: number;
+		rowStart: number;
+		colSpan: number;
+		rowSpan: number;
+	};
 }
 
 interface GridEditorProps {
@@ -38,6 +44,7 @@ const GridEditor: React.FC<GridEditorProps> = ({
   className
 }) => {
   const gridRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
   const [activeElement, setActiveElement] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [showGrid, setShowGrid] = useState(true);
@@ -54,7 +61,7 @@ const GridEditor: React.FC<GridEditorProps> = ({
             key={`cell-${row}-${col}`} 
             className={cn(
               "border border-white/10 flex items-center justify-center",
-              showGrid ? "opacity-30" : "opacity-0"
+              showGrid ? "opacity-90" : "opacity-0"
             )}
             style={{
               gridRowStart: row,
@@ -260,6 +267,10 @@ const GridEditor: React.FC<GridEditorProps> = ({
     setShowGrid(!showGrid);
   };
 
+  const handleBack = () => {
+    navigate(-1);
+  }
+
   // Reset active element when elements change externally
   useEffect(() => {
     if (activeElement && !elements.some(e => e.id === activeElement)) {
@@ -280,12 +291,23 @@ const GridEditor: React.FC<GridEditorProps> = ({
         </div>
       )}
       
+      <div className='flex flex-col absolute top-2 right-2 z-50 gap-4'>
       <button 
-        className="absolute top-2 right-2 z-50 px-3 py-1 bg-gray-800 text-white rounded text-sm"
+        className="px-3 py-1 bg-gray-800 text-white rounded text-sm"
         onClick={toggleGrid}
       >
         {showGrid ? 'Hide Grid' : 'Show Grid'}
       </button>
+
+      <button 
+        className="px-3 py-1 bg-gray-800 text-white rounded text-sm"
+        onClick={handleBack}
+      >
+        Back
+      </button>
+      </div>
+
+
 
       {/* Grid toggle button */}
       {/* <button 

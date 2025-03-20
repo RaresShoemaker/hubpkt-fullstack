@@ -3,17 +3,17 @@ import { HtmlElement } from '../store/features/categoryDesigns/categoryDesigns.t
 import { ButtonStyle } from '../components/Hero/HeroButton';
 
 // Interface for the button elements used in the grid editor
-export interface ButtonElementData {
-  id: string;
-  text: string;
-  link: string;
-  style: ButtonStyle;
-  position: {
-    colStart: number;
-    rowStart: number;
-    colSpan: number;
-    rowSpan: number;
-  };
+interface ButtonElementData {
+	id: string;
+	text: string;
+	link: string;
+	style: ButtonStyle;
+	position: {
+		colStart: number;
+		rowStart: number;
+		colSpan: number;
+		rowSpan: number;
+	};
 }
 
 // Position data extracted from CSS classes
@@ -122,8 +122,6 @@ export function convertButtonElementsToHtmlElements(buttonElements: ButtonElemen
       position: position
     };
   });
-  
-  console.log('Transformed elements:', transformedElements);
   return transformedElements;
 }
 

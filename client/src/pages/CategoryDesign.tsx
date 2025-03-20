@@ -70,7 +70,7 @@ const CategoryDesignPage: React.FC = () => {
       backgroundGradient={currentDesign.backgroundGradient}
       heroImage={currentDesign.image}
       transitionGradient={currentDesign.transitionGradient}
-      htmlElements={currentDesign.htmlElements}
+      designId={currentDesign.id}
     />
   );
 };

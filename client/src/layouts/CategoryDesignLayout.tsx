@@ -1,13 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useCategoryDesigns } from '../store/features/categoryDesigns/useCategoryDesigns';
 import { ButtonStyle } from '../components/Hero/HeroButton';
-import { HtmlElement } from '../store/features/categoryDesigns/categoryDesigns.types';
 import GridEditor from '../components/Admin/Category/CategoryDesign/GridEditor';
 import {
 	convertHtmlElementsToButtonElements,
-	convertButtonElementsToHtmlElements,
-	generateButtonId
+	createPositionClasses
 } from '../utils/designElementUtils';
 import BackgroundTransition from '../components/BackgroundTransition';
 import BlurTransition from '../components/BlurTransition';
@@ -32,7 +30,6 @@ interface CategoryDesignLayoutProps {
 	heroImage?: string;
 	backgroundGradient?: string;
 	transitionGradient?: string;
-	htmlElements?: HtmlElement[];
 	designId: string;
 }
 
@@ -40,104 +37,88 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
 	heroImage,
 	backgroundGradient,
 	transitionGradient,
-	htmlElements = [],
 	designId
 }) => {
-	const navigate = useNavigate();
-	const { editDesignElement } = useCategoryDesigns();
+	// const navigate = useNavigate();
+	const { addHtmlElement, currentDesign, removeHtmlElement } =
+		useCategoryDesigns();
 
 	const [buttonElements, setButtonElements] = useState<ButtonElementData[]>([]);
-	const [selectedButton, setSelectedButton] = useState<string | null>(null);
-	const [isSaving, setIsSaving] = useState(false);
-	const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+	const [selectedButton, setSelectedButton] = useState<ButtonElementData | null>(null)
+	// const [isSaving, setIsSaving] = useState(false);
+	// const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
 	// Convert HTML elements to button elements on initial load
 	useEffect(() => {
-		if (htmlElements && htmlElements.length > 0) {
+		if (currentDesign && currentDesign.htmlElements) {
+			const htmlElements = currentDesign.htmlElements.filter((html) => html.htmlTag.type === 'button');
 			const initialButtons = convertHtmlElementsToButtonElements(htmlElements);
 			setButtonElements(initialButtons);
-			setHasUnsavedChanges(false);
 		}
-	}, [htmlElements]);
+	}, [currentDesign]);
 
 	// Handle creating a new button
-	const handleCreateButton = (buttonData: { text: string; style: ButtonStyle; link: string }) => {
-		const newButton: ButtonElementData = {
-			id: generateButtonId(),
+	const handleCreateButton = async (buttonData: { text: string; style: ButtonStyle; link: string }) => {
+		const newButton = {
 			text: buttonData.text,
 			style: buttonData.style,
 			link: buttonData.link,
+			type: 'button',
 			position: {
-				colStart: 4, // Default position in the middle
-				rowStart: 3,
-				colSpan: buttonData.style === 'primary' ? 4 : 3, // Adjust span based on style
+				colStart: 7,
+				rowStart: 2,
+				colSpan: 2,
 				rowSpan: 1
 			}
 		};
 
-		setButtonElements([...buttonElements, newButton]);
-		setSelectedButton(newButton.id);
-		setHasUnsavedChanges(true);
+		try {
+			const newAddedElement = await addHtmlElement({
+				designElementId: designId,
+				htmlTag: {
+					...newButton,
+					position: createPositionClasses(newButton.position)
+				}
+			});
+			// Convert the payload to ButtonElementData format
+			if (newAddedElement.payload && typeof newAddedElement.payload === 'object') {
+				const convertedElement = convertHtmlElementsToButtonElements([newAddedElement.payload as any])[0];
+				setButtonElements([...buttonElements, convertedElement]);
+			}
+			
+		} catch (error) {
+			console.error('Error creating button:', error);
+		}
 	};
 
 	// Handle updating a button
-	const handleUpdateButton = (id: string, updates: { text?: string; style?: ButtonStyle }) => {
-		setButtonElements((buttons) =>
-			buttons.map((button) => (button.id === id ? { ...button, ...updates } : button))
-		);
-		setHasUnsavedChanges(true);
-	};
+	const handleUpdateButton = (id: string, updates: Partial<ButtonElementData>) => {
+    setButtonElements((prevButtons) =>
+        prevButtons.map((button) =>
+            button.id === id ? { ...button, ...updates } : button
+        )
+    );
+};
 
 	// Handle deleting a button
-	const handleDeleteButton = (id: string) => {
+	const handleDeleteButton = async (id: string) => {
+		await removeHtmlElement(id);
 		setButtonElements((buttons) => buttons.filter((button) => button.id !== id));
 		setSelectedButton(null);
-		setHasUnsavedChanges(true);
 	};
 
 	// Handle grid changes
 	const handleElementsChange = (elements: ButtonElementData[]) => {
 		setButtonElements(elements);
-		setHasUnsavedChanges(true);
+		// setHasUnsavedChanges(true);
 	};
 
 	// Handle selecting a button
-	const handleSelectButton = (id: string | null) => {
-		setSelectedButton(id);
-	};
-
-	// Handle save
-	const handleSave = async () => {
-		if (!designId) {
-			console.error('No design ID provided');
-			return;
+	const handleSelectButton = (buttonElement: ButtonElementData) => {
+		const button = buttonElements.find((button) => button.id === buttonElement.id);
+		if (button?.id) {
+			setSelectedButton(button);
 		}
-
-		setIsSaving(true);
-
-		try {
-			const htmlElementsData = convertButtonElementsToHtmlElements(buttonElements);
-
-			await editDesignElement({
-				id: designId,
-				htmlElements: htmlElementsData
-			});
-
-			setHasUnsavedChanges(false);
-		} catch (error) {
-			console.error('Error saving design:', error);
-		} finally {
-			setIsSaving(false);
-		}
-	};
-
-	// Handle back navigation
-	const handleBack = () => {
-		if (hasUnsavedChanges) {
-			const confirmed = window.confirm('You have unsaved changes. Are you sure you want to leave?');
-			if (!confirmed) return;
-		}
-		navigate(-1);
 	};
 
 	return (
@@ -187,11 +168,11 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
 												key={button.id}
 												className={cn(
 													'px-4 py-2 rounded-lg cursor-pointer',
-													selectedButton === button.id
+													selectedButton?.id === button.id
 														? 'bg-blue-900/50 border border-blue-500'
 														: 'bg-gray-700 hover:bg-gray-600'
 												)}
-												onClick={() => setSelectedButton(selectedButton === button.id ? null : button.id)}
+												onClick={() =>handleSelectButton(button)}
 											>
 												<div className='flex justify-between items-center'>
 													<span className='text-white'>{button.text}</span>
@@ -205,21 +186,20 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
 								)}
 							</div>
 
-              {selectedButton && (() => {
-              const button = buttonElements.find(b => b.id === selectedButton);
-              if (!button) return null;
-              
-              return (
-                <ButtonEditor
-                  id={button.id}
-                  text={button.text}
-                  style={button.style}
-                  onUpdate={handleUpdateButton}
-                  onDelete={handleDeleteButton}
-                />
-              );
-            })()}
-              </div>
+							{selectedButton &&
+								(() => {
+									const button = buttonElements.find((b) => b.id === selectedButton.id);
+									if (!button) return null;
+
+									return (
+										<ButtonEditor
+											initialValue={selectedButton}
+											onUpdate={handleUpdateButton}
+											onDelete={handleDeleteButton}
+										/>
+									);
+								})()}
+						</div>
 					</div>
 				</div>
 

@@ -1,41 +1,45 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ButtonStyle } from '../../../Hero/HeroButton';
+import { createPositionClasses } from '../../../../utils/designElementUtils';
+import { useCategoryDesigns } from '../../../../store/features/categoryDesigns/useCategoryDesigns';
+
+interface ButtonElementData {
+	id: string;
+	text: string;
+	link: string;
+	style: ButtonStyle;
+	position: {
+		colStart: number;
+		rowStart: number;
+		colSpan: number;
+		rowSpan: number;
+	};
+}
 
 interface ButtonEditorProps {
-  id: string;
-  text: string;
-  style: ButtonStyle;
-  position?: {
-    colStart: number;
-    rowStart: number;
-    colSpan: number;
-    rowSpan: number;
-  };
-  onUpdate: (id: string, updates: { 
-    text?: string; 
-    style?: ButtonStyle;
-    position?: {
-      colStart?: number;
-      rowStart?: number;
-      colSpan?: number;
-      rowSpan?: number;
-    }
-  }) => void;
+  initialValue: ButtonElementData;
+  onUpdate: (id: string, updates: Partial<ButtonElementData>) => void;
   onDelete: (id: string) => void;
 }
 
 const ButtonEditor: React.FC<ButtonEditorProps> = ({
-  id,
-  text,
-  style,
-  position = { colStart: 1, rowStart: 1, colSpan: 2, rowSpan: 1 },
+  initialValue,
   onUpdate,
   onDelete
 }) => {
-  const [buttonText, setButtonText] = useState(text);
-  const [buttonStyle, setButtonStyle] = useState<ButtonStyle>(style);
-  const [colSpan, setColSpan] = useState(position.colSpan);
-  const [rowSpan, setRowSpan] = useState(position.rowSpan);
+  const { editHtmlElement } = useCategoryDesigns();
+  const [buttonText, setButtonText] = useState<string>('');
+  const [buttonStyle, setButtonStyle] = useState<ButtonStyle>('primary');
+  const [buttonLink, setButtonLink] = useState<string>('');
+
+  useEffect(() => {
+    if(initialValue) {
+    setButtonText(initialValue.text);
+    setButtonStyle(initialValue.style);
+    setButtonLink(initialValue.link);
+    }
+  }
+  , [initialValue]);
 
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setButtonText(e.target.value);
@@ -45,33 +49,33 @@ const ButtonEditor: React.FC<ButtonEditorProps> = ({
     setButtonStyle(e.target.value as ButtonStyle);
   };
 
-  const handleColSpanChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
-    if (value >= 1 && value <= 12) {
-      setColSpan(value);
-    }
+  const handleLinkChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setButtonLink(e.target.value);
   };
 
-  const handleRowSpanChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
-    if (value >= 1 && value <= 6) {
-      setRowSpan(value);
-    }
-  };
-
-  const handleApply = () => {
-    onUpdate(id, { 
-      text: buttonText, 
+  const handleApplyChanges = async () => {
+    const updatedButton = {
+      text: buttonText,
       style: buttonStyle,
-      position: {
-        colSpan,
-        rowSpan
+      link: buttonLink,
+      position: initialValue.position
+    };
+
+    await editHtmlElement({
+      id: initialValue.id,
+      htmlTag: {
+        ...updatedButton,
+        type: 'button',
+        position: createPositionClasses(updatedButton.position)
       }
-    });
+    })
+  
+    // Call the onUpdate function with the updated data
+    onUpdate(initialValue.id, updatedButton);
   };
 
   const handleDelete = () => {
-    onDelete(id);
+    onDelete(initialValue.id);
   };
 
   return (
@@ -84,6 +88,16 @@ const ButtonEditor: React.FC<ButtonEditorProps> = ({
           type="text" 
           value={buttonText} 
           onChange={handleTextChange}
+          className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600"
+        />
+      </div>
+
+      <div className="mb-3">
+        <label className="text-white text-sm block mb-1">Button Link</label>
+        <input 
+          type="text" 
+          value={buttonLink} 
+          onChange={handleLinkChange}
           className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600"
         />
       </div>
@@ -103,35 +117,13 @@ const ButtonEditor: React.FC<ButtonEditorProps> = ({
       <div className="mb-4">
         <label className="text-white text-sm block mb-1">Button Size</label>
         <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="text-white text-xs block mb-1">Width (columns)</label>
-            <input 
-              type="number" 
-              min="1" 
-              max="12" 
-              value={colSpan} 
-              onChange={handleColSpanChange}
-              className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600"
-            />
-          </div>
-          <div>
-            <label className="text-white text-xs block mb-1">Height (rows)</label>
-            <input 
-              type="number" 
-              min="1" 
-              max="6" 
-              value={rowSpan} 
-              onChange={handleRowSpanChange}
-              className="w-full px-3 py-2 bg-gray-700 text-white rounded border border-gray-600"
-            />
-          </div>
         </div>
         <p className="text-gray-400 text-xs mt-1">Columns: 1-12, Rows: 1-6</p>
       </div>
       
       <div className="flex gap-2">
         <button 
-          onClick={handleApply}
+          onClick={handleApplyChanges}
           className="flex-1 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
         >
           Apply
