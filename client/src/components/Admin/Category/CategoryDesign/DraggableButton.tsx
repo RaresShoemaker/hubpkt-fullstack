@@ -2,6 +2,35 @@ import React, { useState, useRef, useEffect } from 'react';
 import ButtonHero from '../../../Hero/HeroButton';
 import { DraggableButtonProps, Position } from './types';
 
+// Grid configuration - must match the grid in HeroContainer
+const GRID_COLS = 12;
+const GRID_ROWS = 6;
+
+// Convert mouse position to grid-snapped percentage position
+function getGridSnappedPosition(clientX: number, clientY: number, heroRect: DOMRect): Position {
+  // Calculate relative position within hero
+  const relativeX = clientX - heroRect.left;
+  const relativeY = clientY - heroRect.top;
+  
+  // Convert to percentages
+  const percentX = (relativeX / heroRect.width) * 100;
+  const percentY = (relativeY / heroRect.height) * 100;
+  
+  // Calculate cell width/height in percentage terms
+  const cellWidth = 100 / GRID_COLS;
+  const cellHeight = 100 / GRID_ROWS;
+  
+  // Calculate which grid cell we're in (1-based)
+  const colStart = Math.max(1, Math.min(GRID_COLS, Math.floor(percentX / cellWidth) + 1));
+  const rowStart = Math.max(1, Math.min(GRID_ROWS, Math.floor(percentY / cellHeight) + 1));
+  
+  // Convert back to percentage positions, but snapped to grid cell
+  const snappedX = (colStart - 1) * cellWidth;
+  const snappedY = (rowStart - 1) * cellHeight;
+  
+  return { x: snappedX, y: snappedY };
+}
+
 const DraggableButton: React.FC<DraggableButtonProps> = ({ 
   element, 
   elementId,
@@ -9,49 +38,51 @@ const DraggableButton: React.FC<DraggableButtonProps> = ({
   heroRef 
 }) => {
   const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [position, setPosition] = useState<Position>(element.position);
+  const [currentGridCell, setCurrentGridCell] = useState<{col: number, row: number}>(() => {
+    const cellWidth = 100 / GRID_COLS;
+    const cellHeight = 100 / GRID_ROWS;
+    return {
+      col: Math.max(1, Math.min(GRID_COLS, Math.floor(element.position.x / cellWidth) + 1)),
+      row: Math.max(1, Math.min(GRID_ROWS, Math.floor(element.position.y / cellHeight) + 1))
+    };
+  });
+  
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const dragOffset = useRef<Position>({ x: 0, y: 0 });
+  
+  // Update grid cell when element.position changes from parent
+  useEffect(() => {
+    // Update current grid cell
+    const cellWidth = 100 / GRID_COLS;
+    const cellHeight = 100 / GRID_ROWS;
+    setCurrentGridCell({
+      col: Math.max(1, Math.min(GRID_COLS, Math.floor(element.position.x / cellWidth) + 1)),
+      row: Math.max(1, Math.min(GRID_ROWS, Math.floor(element.position.y / cellHeight) + 1))
+    });
+  }, [element.position]);
   
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (!wrapperRef.current || !heroRef.current) return;
+    if (!heroRef.current) return;
     e.preventDefault(); // Prevent default to avoid button click while dragging
-    
     setIsDragging(true);
-    
-    const wrapperRect = wrapperRef.current.getBoundingClientRect();
-    const offsetX = e.clientX - wrapperRect.left;
-    const offsetY = e.clientY - wrapperRect.top;
-    
-    dragOffset.current = { x: offsetX, y: offsetY };
   };
   
   const handleMouseMove = (e: MouseEvent) => {
     if (!isDragging || !heroRef.current) return;
     
     const heroRect = heroRef.current.getBoundingClientRect();
+    const snappedPosition = getGridSnappedPosition(e.clientX, e.clientY, heroRect);
     
-    // Calculate position relative to hero container
-    const relativeX = e.clientX - heroRect.left - dragOffset.current.x;
-    const relativeY = e.clientY - heroRect.top - dragOffset.current.y;
+    // Calculate the current grid cell
+    const cellWidth = 100 / GRID_COLS;
+    const cellHeight = 100 / GRID_ROWS;
+    const col = Math.floor(snappedPosition.x / cellWidth) + 1;
+    const row = Math.floor(snappedPosition.y / cellHeight) + 1;
     
-    // Calculate position as percentages for responsiveness
-    const percentX = (relativeX / heroRect.width) * 100;
-    const percentY = (relativeY / heroRect.height) * 100;
-    
-    // Calculate button width as percentage (estimate based on style)
-    const buttonWidthPercent = element.style === 'primary' ? 20 : 15;
-    const buttonHeightPercent = 8;
-    
-    // Constrain to hero container boundaries
-    const constrainedX = Math.max(0, Math.min(percentX, 100 - buttonWidthPercent));
-    const constrainedY = Math.max(0, Math.min(percentY, 100 - buttonHeightPercent));
-    
-    const newPosition = { x: constrainedX, y: constrainedY };
-    setPosition(newPosition);
-    
-    // Update the element position
-    onPositionChange(elementId, newPosition);
+    // Only update if we've moved to a different grid cell
+    if (col !== currentGridCell.col || row !== currentGridCell.row) {
+      setCurrentGridCell({ col, row });
+      onPositionChange(elementId, snappedPosition);
+    }
   };
   
   const handleMouseUp = () => {
@@ -69,30 +100,30 @@ const DraggableButton: React.FC<DraggableButtonProps> = ({
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [isDragging]);
+  }, [isDragging, currentGridCell]);
   
+  // Calculate current grid position class string
+  const gridPosition = `col-start-${currentGridCell.col} col-span-2 row-start-${currentGridCell.row} row-span-1`;
+  
+  // Both dragging and non-dragging states now use the grid system
   return (
     <div 
       ref={wrapperRef}
-      className={`absolute hidden lg:block ${isDragging ? 'z-50' : 'z-10'}`}
-      style={{
-        left: `${position.x}%`,
-        top: `${position.y}%`,
-        touchAction: 'none',
-        cursor: 'move',
-        width: element.style === 'primary' ? '200px' : '150px'
-      }}
+      className={`${gridPosition} hidden lg:flex items-center justify-center cursor-grab z-10 ${isDragging ? 'z-50' : 'z-10'}`}
       onMouseDown={handleMouseDown}
     >
-      <div className="drag-handle w-full h-6 flex items-center justify-center mb-1 bg-gray-800 bg-opacity-50 rounded-t">
-        <div className="w-8 h-1 bg-white rounded-full"></div>
+      <div className="relative w-full">
+        {/* Add a visual indicator for dragging state */}
+        <div className={`drag-handle w-full h-6 flex items-center justify-center mb-1 bg-gray-800 ${isDragging ? 'bg-opacity-80' : 'bg-opacity-50'} rounded-t`}>
+          <div className="w-8 h-1 bg-white rounded-full"></div>
+        </div>
+        <ButtonHero 
+          style={element.style}
+          text={element.text}
+          link={isDragging ? undefined : element.link} // Disable link while dragging
+          className="pointer-events-none" // Prevent button click events during drag
+        />
       </div>
-      <ButtonHero 
-        style={element.style}
-        text={element.text}
-        link={isDragging ? undefined : element.link} // Disable link while dragging
-        className="pointer-events-none" // Prevent button click events during drag
-      />
     </div>
   );
 };

@@ -30,13 +30,17 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const heroRef = useRef<HTMLDivElement>(null);
   
+  // Constants for grid
+  const GRID_COLS = 12;
+  const GRID_ROWS = 6;
+  
   // Initialize draggable elements from htmlElements on first render
   useEffect(() => {
     const initialDraggableElements: {[id: string]: DraggableButtonData} = {};
     
     htmlElements.forEach(element => {
       if (element.htmlTag.type === 'button') {
-        // Parse position from string "col-start-X col-end-Y row-start-Z row-end-W" to x, y coordinates
+        // Parse position from string to percentage coordinates
         const position = parsePositionFromGridClasses(element.htmlTag.position || '');
         
         initialDraggableElements[element.id] = {
@@ -60,7 +64,7 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
       // Process all HTML elements from the current design
       currentDesign.htmlElements.forEach(element => {
         if (element.htmlTag.type === 'button') {
-          // Parse position from string to x, y coordinates
+          // Parse position from string to percentage coordinates
           const position = parsePositionFromGridClasses(element.htmlTag.position || '');
           
           updatedDraggableElements[element.id] = {
@@ -80,7 +84,7 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
     }
   }, [currentDesign]);
   
-  // Helper function to parse grid position classes to x,y coordinates
+  // Parse grid classes to percentage position
   const parsePositionFromGridClasses = (positionClass: string): Position => {
     try {
       const colStartMatch = positionClass.match(/col-start-(\d+)/);
@@ -90,9 +94,12 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
         const colStart = parseInt(colStartMatch[1], 10);
         const rowStart = parseInt(rowStartMatch[1], 10);
         
-        // Convert to percentage positions (assuming 12 column grid and 6 row grid)
-        const x = ((colStart - 1) / 12) * 100;
-        const y = ((rowStart - 1) / 6) * 100;
+        // Calculate percentage position (for drag operations)
+        const cellWidth = 100 / GRID_COLS;
+        const cellHeight = 100 / GRID_ROWS;
+        
+        const x = (colStart - 1) * cellWidth;
+        const y = (rowStart - 1) * cellHeight;
         
         return { x, y };
       }
@@ -104,16 +111,24 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
     return { x: 10, y: 40 };
   };
   
-  // Helper function to convert x,y coordinates to grid position classes
+  // Convert percentage position back to grid classes
   const convertPositionToGridClasses = (position: Position): string => {
-    // Convert percentage positions back to grid coordinates
-    const colStart = Math.floor((position.x / 100) * 12) + 1;
-    const rowStart = Math.floor((position.y / 100) * 6) + 1;
+    // Calculate grid cell from percentage position
+    const cellWidth = 100 / GRID_COLS;
+    const cellHeight = 100 / GRID_ROWS;
     
-    return `col-start-${colStart} col-span-2 row-start-${rowStart} row-span-1`;
+    // Calculate the grid cell (1-based)
+    const colStart = Math.max(1, Math.min(GRID_COLS, Math.floor(position.x / cellWidth) + 1));
+    const rowStart = Math.max(1, Math.min(GRID_ROWS, Math.floor(position.y / cellHeight) + 1));
+    
+    // Default span values
+    const colSpan = 2;
+    const rowSpan = 1;
+    
+    return `col-start-${colStart} col-span-${colSpan} row-start-${rowStart} row-span-${rowSpan}`;
   };
   
-  // Handle element position changes (just update local state, don't save to API yet)
+  // Handle position changes from dragging
   const handlePositionChange = (elementId: string, newPosition: Position) => {
     setDraggableElements(prev => ({
       ...prev,
@@ -136,18 +151,26 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
       
       const heroRect = heroRef.current.getBoundingClientRect();
       
-      // Calculate drop position within hero container as percentages
-      const percentX = ((e.clientX - heroRect.left) / heroRect.width) * 100;
-      const percentY = ((e.clientY - heroRect.top) / heroRect.height) * 100;
+      // Calculate drop position within hero container
+      const offsetX = e.clientX - heroRect.left;
+      const offsetY = e.clientY - heroRect.top;
       
-      // Constrain to boundaries
-      const buttonWidthPercent = buttonData.style === 'primary' ? 20 : 15;
-      const buttonHeightPercent = 8;
+      // Convert to percentage positions
+      const percentX = (offsetX / heroRect.width) * 100;
+      const percentY = (offsetY / heroRect.height) * 100;
       
-      const constrainedX = Math.max(0, Math.min(percentX, 100 - buttonWidthPercent));
-      const constrainedY = Math.max(0, Math.min(percentY, 100 - buttonHeightPercent));
+      // Calculate grid cell position
+      const cellWidth = 100 / GRID_COLS;
+      const cellHeight = 100 / GRID_ROWS;
       
-      // Generate a unique ID for the new element (temporary ID for local state only)
+      const colStart = Math.floor(percentX / cellWidth) + 1;
+      const rowStart = Math.floor(percentY / cellHeight) + 1;
+      
+      // Convert back to percentage for internal representation
+      const snappedX = (colStart - 1) * cellWidth;
+      const snappedY = (rowStart - 1) * cellHeight;
+      
+      // Generate a unique ID for the new element
       const newElementId = `new-${Date.now()}`;
       
       // Add to draggable elements
@@ -155,9 +178,9 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
         ...prev,
         [newElementId]: {
           text: buttonData.text,
-          link: buttonData.link,
+          link: buttonData.link || '#',
           style: buttonData.style,
-          position: { x: constrainedX, y: constrainedY }
+          position: { x: snappedX, y: snappedY }
         }
       }));
       
@@ -173,10 +196,16 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
   
   // Handle creating a new button
   const handleButtonCreate = (buttonData: Omit<DraggableButtonData, 'position'>) => {
-    // Default position for new buttons
-    const position = { x: 10, y: 40 };
+    // Default position in the middle area
+    const colStart = 5;
+    const rowStart = 3;
+    const cellWidth = 100 / GRID_COLS;
+    const cellHeight = 100 / GRID_ROWS;
     
-    // Generate a unique ID for the new element (temporary ID for local state only)
+    const x = (colStart - 1) * cellWidth;
+    const y = (rowStart - 1) * cellHeight;
+    
+    // Generate a unique ID for the new element
     const newElementId = `new-${Date.now()}`;
     
     // Add to draggable elements
@@ -184,7 +213,7 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
       ...prev,
       [newElementId]: {
         ...buttonData,
-        position
+        position: { x, y }
       }
     }));
     
@@ -205,7 +234,6 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
       delete newState[elementId];
       return newState;
     });
-
   };
   
   // Save all changes to the API
@@ -218,7 +246,7 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
     setIsSaving(true);
     
     try {
-      // Step 1: First update the basic design element properties (without HTML elements)
+      // Step 1: First update the basic design element properties
       await editDesignElement({
         id: currentDesign.id,
         backgroundGradient: currentDesign.backgroundGradient,
@@ -230,26 +258,25 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
       const newElements = [];
       
       for (const [id, element] of Object.entries(draggableElements)) {
+        // Convert percentage positions to grid classes
         const gridPosition = convertPositionToGridClasses(element.position);
+        
+        const buttonPayload = {
+          type: 'button',
+          text: element.text,
+          link: element.link || '#',
+          style: element.style || 'primary',
+          position: gridPosition
+        };
         
         if (id.startsWith('new-')) {
           // Collect new elements to be created
-          newElements.push({
-            type: 'button',
-            text: element.text,
-            link: element.link || '#',
-            style: element.style || 'primary',
-            position: gridPosition
-          });
+          newElements.push(buttonPayload);
         } else {
           // Collect existing elements to be updated
           existingElements.push({
             id,
-            type: 'button',
-            text: element.text,
-            link: element.link || '#',
-            style: element.style || 'primary',
-            position: gridPosition
+            ...buttonPayload
           });
         }
       }
@@ -277,7 +304,6 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
       await getDesignById(currentDesign.id);
       
       // Temporarily clear draggable elements to prevent duplicates
-      // The useEffect for currentDesign will repopulate it with fresh data
       setDraggableElements({});
       
     } catch (err) {
