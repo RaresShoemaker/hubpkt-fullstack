@@ -6,7 +6,6 @@ import { useCategoryDesigns } from '../../../store/features/categoryDesigns/useC
 import { cn } from '../../../lib/utils';
 import ButtonBase from '../Buttons/ButtonBase';
 import { Monitor, Smartphone, TabletSmartphone, Plus } from 'lucide-react';
-// Custom DeviceSize type to replace enum
 import { DeviceSize } from '../../../store/features/categoryDesigns/categoryDesigns.types';
 import ModalPortal from '../Modal';
 import { CategoryDesignForm } from '../forms/CategoryForm/CategoryDesignForm';

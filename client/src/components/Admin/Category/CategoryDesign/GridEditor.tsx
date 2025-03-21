@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { cn } from '../../../../lib/utils';
 import ButtonHero, { ButtonStyle } from '../../../Hero/HeroButton';
 import HeroImage from '../../../Hero/HeroImage';
@@ -32,6 +32,8 @@ interface GridEditorProps {
   columns?: number;
   rows?: number;
   className?: string;
+  minCellWidth?: number;
+  minCellHeight?: number;
 }
 
 const GridEditor: React.FC<GridEditorProps> = ({
@@ -41,7 +43,9 @@ const GridEditor: React.FC<GridEditorProps> = ({
   onSelectElement,
   columns = 12,
   rows = 6,
-  className
+  className,
+  minCellWidth = 50,
+  minCellHeight = 40
 }) => {
   const gridRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -279,6 +283,19 @@ const GridEditor: React.FC<GridEditorProps> = ({
     }
   }, [elements, activeElement, onSelectElement]);
 
+  // Create grid styles with minimum cell sizes
+  const gridStyles = {
+    display: 'grid',
+    gridTemplateColumns: `repeat(${columns}, minmax(${minCellWidth}px, 1fr))`,
+    gridTemplateRows: `repeat(${rows}, minmax(${minCellHeight}px, 1fr))`,
+    width: '100%',
+    height: '100%',
+    minWidth: `${minCellWidth * columns}px`, // Ensure minimum grid width
+    minHeight: `${minCellHeight * rows}px`,  // Ensure minimum grid height
+    position: 'relative' as const,
+    overflow: 'auto' as const
+  };
+
   return (
     <div className={cn(
             'relative w-full overflow-hidden h-[70vh] md:h-[60vh]',
@@ -292,39 +309,26 @@ const GridEditor: React.FC<GridEditorProps> = ({
       )}
       
       <div className='flex flex-col absolute top-2 right-2 z-50 gap-4'>
-      <button 
-        className="px-3 py-1 bg-gray-800 text-white rounded text-sm"
-        onClick={toggleGrid}
-      >
-        {showGrid ? 'Hide Grid' : 'Show Grid'}
-      </button>
+        <button 
+          className="px-3 py-1 bg-gray-800 text-white rounded text-sm"
+          onClick={toggleGrid}
+        >
+          {showGrid ? 'Hide Grid' : 'Show Grid'}
+        </button>
 
-      <button 
-        className="px-3 py-1 bg-gray-800 text-white rounded text-sm"
-        onClick={handleBack}
-      >
-        Back
-      </button>
+        <button 
+          className="px-3 py-1 bg-gray-800 text-white rounded text-sm"
+          onClick={handleBack}
+        >
+          Back
+        </button>
       </div>
 
-
-
-      {/* Grid toggle button */}
-      {/* <button 
-        className="absolute top-2 right-2 z-50 px-3 py-1 bg-gray-800 text-white rounded text-sm"
-        onClick={toggleGrid}
-      >
-        {showGrid ? 'Hide Grid' : 'Show Grid'}
-      </button> */}
-      
       {/* Main grid container */}
       <div
         ref={gridRef}
-        className="absolute inset-0 z-10 grid"
-        style={{
-          gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
-          gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
-        }}
+        className="absolute inset-0 z-10"
+        style={gridStyles}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onClick={handleGridClick}
