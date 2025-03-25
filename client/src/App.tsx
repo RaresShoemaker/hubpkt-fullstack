@@ -4,7 +4,15 @@ import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { store } from './store/store';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { HomePage, SubmissionPage, CreatorsHubPage, AuthenticationPage, DashboardPage, CategoryDesignPage } from './pages/index';
+import { 
+  HomePage, 
+  SubmissionPage, 
+  CreatorsHubPage, 
+  AuthenticationPage, 
+  DashboardPage, 
+  CategoryDesignPage,
+  CategoryPage // Import the new CategoryPage
+} from './pages/index';
 import SubmissionLayout from './layouts/SubmissionLayout';
 import AnalyticsTracker from './components/AnalyticsTracker';
 import { ThemeProvider } from './components/Admin/Theme/ThemeProvider';
@@ -18,52 +26,60 @@ const App: React.FC = () => {
 
 	return (
 		<Provider store={store}>
-				<Router>
-					<AnalyticsTracker />
-					<Routes>
-						<Route element={<SubmissionLayout />}>
-							<Route path='/submission' element={<SubmissionPage />} />
-						</Route>
+			<Router>
+				<AnalyticsTracker />
+				<Routes>
+					{/* Submission route with its own layout */}
+					<Route element={<SubmissionLayout />}>
+						<Route path='/submission' element={<SubmissionPage />} />
+					</Route>
 
-						<Route
-							path='/'
-							element={
-									<HomePage />
-							}
-						/>
+					{/* Home route */}
+					<Route
+						path='/'
+						element={<HomePage />}
+					/>
 
-						<Route path='/authentication' element={<AuthenticationPage />} />
-						<Route
-							path='/dashboard/*'
-							element={
-								<ProtectedRoute>
-									<ThemeProvider>
-										<DashboardPage />
-									</ThemeProvider>
-								</ProtectedRoute>
-							}
-						/>
+					{/* Category route with slugified title */}
+					<Route
+						path='/category/:title'
+						element={<CategoryPage />}
+					/>
 
-						{/* Preview route */}
-						<Route
-							path='/categorydesign/:id'
-							element={
-								<ProtectedRoute>
-									<ThemeProvider>
-										<CategoryDesignPage />
-									</ThemeProvider>
-								</ProtectedRoute>
-							}
-						/>
+					{/* Authentication route */}
+					<Route path='/authentication' element={<AuthenticationPage />} />
+					
+					{/* Protected dashboard routes */}
+					<Route
+						path='/dashboard/*'
+						element={
+							<ProtectedRoute>
+								<ThemeProvider>
+									<DashboardPage />
+								</ThemeProvider>
+							</ProtectedRoute>
+						}
+					/>
 
-						<Route
-							path='/creatorshub'
-							element={
-									<CreatorsHubPage />
-							}
-						/>
-					</Routes>
-				</Router>
+					{/* Preview route */}
+					<Route
+						path='/categorydesign/:id'
+						element={
+							<ProtectedRoute>
+								<ThemeProvider>
+									<CategoryDesignPage />
+								</ThemeProvider>
+							</ProtectedRoute>
+						}
+					/>
+
+					{/* Creators Hub route */}
+					<Route
+						path='/creatorshub'
+						element={<CreatorsHubPage />}
+					/>
+				</Routes>
+			</Router>
 		</Provider>
 	);
 };

@@ -53,7 +53,14 @@ const GridEditor: React.FC<GridEditorProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [showGrid, setShowGrid] = useState(true);
   const [mousePosition, setMousePosition] = useState<{ x: number, y: number } | null>(null);
+  const [touchPosition, setTouchPosition] = useState<{ x: number, y: number } | null>(null);
   const [dragOffset, setDragOffset] = useState<{ x: number, y: number } | null>(null);
+  const [isTouchDevice, setIsTouchDevice] = useState(false);
+
+  // Detect touch capability on mount
+  useEffect(() => {
+    setIsTouchDevice('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  }, []);
 
   // Helper function to create a grid of cells for visualization
   const renderGridCells = () => {
@@ -92,7 +99,7 @@ const GridEditor: React.FC<GridEditorProps> = ({
     };
   };
 
-  // Convert mouse position to grid position
+  // Convert position to grid position
   const getGridPosition = (clientX: number, clientY: number): Position | null => {
     if (!gridRef.current) return null;
     
@@ -134,6 +141,7 @@ const GridEditor: React.FC<GridEditorProps> = ({
     };
   };
 
+  // MOUSE EVENT HANDLERS
   // Handle mouse down on an element
   const handleMouseDown = (e: React.MouseEvent, elementId: string) => {
     e.preventDefault();
@@ -198,28 +206,99 @@ const GridEditor: React.FC<GridEditorProps> = ({
     setDragOffset(null);
   };
 
+  // TOUCH EVENT HANDLERS
+  // Handle touch start on an element
+  const handleTouchStart = (e: React.TouchEvent, elementId: string) => {
+    if (e.touches.length !== 1) return; // Only handle single touches
+    
+    e.stopPropagation();
+    
+    // Set active element
+    setActiveElement(elementId);
+    if (onSelectElement) onSelectElement(elementId);
+    
+    const touch = e.touches[0];
+    
+    // Start dragging and set touch position
+    setIsDragging(true);
+    setTouchPosition({ x: touch.clientX, y: touch.clientY });
+    
+    // Calculate drag offset (distance from top-left of the element to the touch position)
+    if (gridRef.current) {
+      const element = elements.find(el => el.id === elementId);
+      if (element) {
+        const rect = gridRef.current.getBoundingClientRect();
+        const cellSize = getCellSize();
+        
+        // Calculate element's top-left position
+        const elementLeft = rect.left + (element.position.colStart - 1) * cellSize.width;
+        const elementTop = rect.top + (element.position.rowStart - 1) * cellSize.height;
+        
+        // Drag offset is the difference between touch position and element's top-left
+        setDragOffset({
+          x: touch.clientX - elementLeft,
+          y: touch.clientY - elementTop
+        });
+      }
+    }
+  };
+
+  // Handle touch move to update element position
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging || !activeElement || e.touches.length !== 1) return;
+    
+    // Prevent scrolling during drag
+    e.preventDefault();
+    
+    const touch = e.touches[0];
+    
+    // Update touch position
+    setTouchPosition({ x: touch.clientX, y: touch.clientY });
+    
+    const gridPosition = getGridPosition(touch.clientX, touch.clientY);
+    if (!gridPosition) return;
+    
+    // Update the position of the active element
+    const updatedElements = elements.map(element => {
+      if (element.id === activeElement) {
+        return {
+          ...element,
+          position: gridPosition
+        };
+      }
+      return element;
+    });
+    
+    onElementsChange(updatedElements);
+  };
+
+  // Handle touch end to end dragging
+  const handleTouchEnd = () => {
+    setIsDragging(false);
+    setTouchPosition(null);
+    setDragOffset(null);
+  };
+
   // Set up global mouse events for dragging
   useEffect(() => {
-    if (isDragging) {
+    if (isDragging && mousePosition) {
       const handleGlobalMouseMove = (e: MouseEvent) => {
-        if (mousePosition) {
-          const gridPosition = getGridPosition(e.clientX, e.clientY);
-          if (!gridPosition) return;
-          
-          // Update the position of the active element
-          const updatedElements = elements.map(element => {
-            if (element.id === activeElement) {
-              return {
-                ...element,
-                position: gridPosition
-              };
-            }
-            return element;
-          });
-          
-          onElementsChange(updatedElements);
-          setMousePosition({ x: e.clientX, y: e.clientY });
-        }
+        const gridPosition = getGridPosition(e.clientX, e.clientY);
+        if (!gridPosition) return;
+        
+        // Update the position of the active element
+        const updatedElements = elements.map(element => {
+          if (element.id === activeElement) {
+            return {
+              ...element,
+              position: gridPosition
+            };
+          }
+          return element;
+        });
+        
+        onElementsChange(updatedElements);
+        setMousePosition({ x: e.clientX, y: e.clientY });
       };
       
       const handleGlobalMouseUp = () => {
@@ -237,6 +316,52 @@ const GridEditor: React.FC<GridEditorProps> = ({
       };
     }
   }, [isDragging, activeElement, mousePosition, elements, onElementsChange]);
+
+  // Set up global touch events for dragging
+  useEffect(() => {
+    if (isDragging && touchPosition) {
+      const handleGlobalTouchMove = (e: TouchEvent) => {
+        if (e.touches.length !== 1) return;
+        
+        const touch = e.touches[0];
+        const gridPosition = getGridPosition(touch.clientX, touch.clientY);
+        if (!gridPosition) return;
+        
+        // Update the position of the active element
+        const updatedElements = elements.map(element => {
+          if (element.id === activeElement) {
+            return {
+              ...element,
+              position: gridPosition
+            };
+          }
+          return element;
+        });
+        
+        onElementsChange(updatedElements);
+        setTouchPosition({ x: touch.clientX, y: touch.clientY });
+        
+        // Prevent default to stop scrolling
+        e.preventDefault();
+      };
+      
+      const handleGlobalTouchEnd = () => {
+        setIsDragging(false);
+        setTouchPosition(null);
+        setDragOffset(null);
+      };
+      
+      window.addEventListener('touchmove', handleGlobalTouchMove, { passive: false });
+      window.addEventListener('touchend', handleGlobalTouchEnd);
+      window.addEventListener('touchcancel', handleGlobalTouchEnd);
+      
+      return () => {
+        window.removeEventListener('touchmove', handleGlobalTouchMove);
+        window.removeEventListener('touchend', handleGlobalTouchEnd);
+        window.removeEventListener('touchcancel', handleGlobalTouchEnd);
+      };
+    }
+  }, [isDragging, activeElement, touchPosition, elements, onElementsChange]);
 
   // Handle element selection
   const handleElementClick = (e: React.MouseEvent, elementId: string) => {
@@ -324,10 +449,17 @@ const GridEditor: React.FC<GridEditorProps> = ({
         </button>
       </div>
 
+      {/* Mobile hint - only shown on touch devices */}
+      {isTouchDevice && (
+        <div className="md:hidden absolute top-2 left-2 z-50 bg-gray-800/80 text-white text-xs p-2 rounded">
+          Tap and drag elements to position
+        </div>
+      )}
+
       {/* Main grid container */}
       <div
         ref={gridRef}
-        className="absolute inset-0 z-10"
+        className="absolute inset-0 z-10 touch-manipulation"
         style={gridStyles}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -348,14 +480,21 @@ const GridEditor: React.FC<GridEditorProps> = ({
             style={getElementStyle(element.position)}
             onClick={(e) => handleElementClick(e, element.id)}
             onMouseDown={(e) => handleMouseDown(e, element.id)}
+            onTouchStart={(e) => handleTouchStart(e, element.id)}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
           >
             <div className="relative w-full">
-              {/* Draggable handle */}
+              {/* Draggable handle - larger on touch devices */}
               <div className={cn(
-                "w-full h-6 flex items-center justify-center mb-1 rounded-t",
-                "bg-gray-800 bg-opacity-60"
+                "w-full flex items-center justify-center mb-1 rounded-t",
+                "bg-gray-800 bg-opacity-60",
+                isTouchDevice ? "h-8" : "h-6"
               )}>
-                <div className="w-8 h-1 bg-white rounded-full"></div>
+                <div className={cn(
+                  "bg-white rounded-full",
+                  isTouchDevice ? "w-10 h-2" : "w-8 h-1"
+                )}></div>
               </div>
               
               {/* Element content */}

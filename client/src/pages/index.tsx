@@ -4,6 +4,7 @@ import CreatorsHubPage from './CreatorsHub';
 import AuthenticationPage from './Authentication';
 import DashboardPage from './Dashboard';
 import CategoryDesignPage from './CategoryDesign';
+import CategoryPage from './Category';
 
 
-export { HomePage, SubmissionPage, CreatorsHubPage, AuthenticationPage, DashboardPage, CategoryDesignPage };
+export { HomePage, SubmissionPage, CreatorsHubPage, AuthenticationPage, DashboardPage, CategoryDesignPage, CategoryPage };

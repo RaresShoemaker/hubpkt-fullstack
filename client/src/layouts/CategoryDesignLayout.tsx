@@ -3,10 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useCategoryDesigns } from '../store/features/categoryDesigns/useCategoryDesigns';
 import { ButtonStyle } from '../components/Hero/HeroButton';
 import GridEditor from '../components/Admin/Category/CategoryDesign/GridEditor';
-import {
-	convertHtmlElementsToButtonElements,
-	createPositionClasses
-} from '../utils/designElementUtils';
+import { convertHtmlElementsToButtonElements, createPositionClasses } from '../utils/designElementUtils';
 import BackgroundTransition from '../components/BackgroundTransition';
 import BlurTransition from '../components/BlurTransition';
 import { cn } from '../lib/utils';
@@ -39,16 +36,15 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
 	transitionGradient,
 	designId
 }) => {
-	const { addHtmlElement, currentDesign, removeHtmlElement } =
-		useCategoryDesigns();
+	const { addHtmlElement, currentDesign, removeHtmlElement } = useCategoryDesigns();
 
 	const [buttonElements, setButtonElements] = useState<ButtonElementData[]>([]);
 	const [selectedButtonId, setSelectedButtonId] = useState<string | null>(null);
-	
+
 	// Compute the selected button from the buttonElements array
 	// This ensures we always have the most up-to-date button data
-	const selectedButton = selectedButtonId 
-		? buttonElements.find(button => button.id === selectedButtonId) || null 
+	const selectedButton = selectedButtonId
+		? buttonElements.find((button) => button.id === selectedButtonId) || null
 		: null;
 
 	// Convert HTML elements to button elements on initial load
@@ -70,7 +66,7 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
 			position: {
 				colStart: 7,
 				rowStart: 2,
-				colSpan: 2,
+				colSpan: (currentDesign?.device === 'mobile' || currentDesign?.device === 'tablet') ? 4 : 2,
 				rowSpan: 1
 			}
 		};
@@ -86,9 +82,8 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
 			// Convert the payload to ButtonElementData format
 			if (newAddedElement.payload && typeof newAddedElement.payload === 'object') {
 				const convertedElement = convertHtmlElementsToButtonElements([newAddedElement.payload as any])[0];
-				setButtonElements(prev => [...prev, convertedElement]);
+				setButtonElements((prev) => [...prev, convertedElement]);
 			}
-			
 		} catch (error) {
 			console.error('Error creating button:', error);
 		}
@@ -96,25 +91,26 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
 
 	// Handle updating a button
 	const handleUpdateButton = useCallback((id: string, updates: Partial<ButtonElementData>) => {
-		setButtonElements(prevButtons =>
-			prevButtons.map(button =>
-				button.id === id ? { ...button, ...updates } : button
-			)
+		setButtonElements((prevButtons) =>
+			prevButtons.map((button) => (button.id === id ? { ...button, ...updates } : button))
 		);
 	}, []);
 
 	// Handle deleting a button
-	const handleDeleteButton = useCallback(async (id: string) => {
-		await removeHtmlElement(id);
-		setButtonElements(buttons => buttons.filter(button => button.id !== id));
-		setSelectedButtonId(null);
-	}, [removeHtmlElement]);
+	const handleDeleteButton = useCallback(
+		async (id: string) => {
+			await removeHtmlElement(id);
+			setButtonElements((buttons) => buttons.filter((button) => button.id !== id));
+			setSelectedButtonId(null);
+		},
+		[removeHtmlElement]
+	);
 
 	// Handle grid changes - this is called when buttons are dragged
 	const handleElementsChange = useCallback((elements: ButtonElementData[]) => {
 		// Update all button elements
 		setButtonElements(elements);
-		
+
 		// Don't need to explicitly update selectedButton
 		// because it's derived from buttonElements and selectedButtonId
 	}, []);
@@ -155,12 +151,12 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
 					)}
 
 					{/* Main Content */}
-					<div className={cn('flex-grow z-[5] ml-[300px]')}>
-						<div className='flex gap-10 -mt-36 mb-20'>
-							<div className='items-start justify-center w-fit'>
+					<div className={cn('flex-grow z-[5] lg:ml-[300px] px-4 md:px-0')}>
+						<div className='flex flex-col md:flex-row gap-5 md:gap-10 -mt-20 md:mt-0 mb-10'>
+							<div className='items-start justify-center w-full md:w-fit'>
 								<ButtonFactory onCreateButton={handleCreateButton} />
 							</div>
-							<div className='bg-gray-600 rounded-lg w-[200px] p-4'>
+							<div className='bg-gray-600 rounded-lg w-full md:w-[200px] p-4'>
 								<h3 className='text-white font-medium mb-4'>Buttons ({buttonElements.length})</h3>
 
 								{buttonElements.length === 0 ? (
@@ -168,7 +164,7 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
 										No buttons added yet. Use the Button Factory to create one.
 									</p>
 								) : (
-									<div className='space-y-2'>
+									<div className='space-y-2 max-h-[40vh] md:max-h-none overflow-y-auto'>
 										{buttonElements.map((button) => (
 											<div
 												key={button.id}
@@ -193,12 +189,14 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
 							</div>
 
 							{selectedButton && (
-								<ButtonEditor
-									key={`editor-${selectedButton.id}-${JSON.stringify(selectedButton.position)}`}
-									initialValue={selectedButton}
-									onUpdate={handleUpdateButton}
-									onDelete={handleDeleteButton}
-								/>
+								<div className='w-full md:w-auto'>
+									<ButtonEditor
+										key={`editor-${selectedButton.id}-${JSON.stringify(selectedButton.position)}`}
+										initialValue={selectedButton}
+										onUpdate={handleUpdateButton}
+										onDelete={handleDeleteButton}
+									/>
+								</div>
 							)}
 						</div>
 					</div>

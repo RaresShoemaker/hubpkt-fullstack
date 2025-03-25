@@ -5,6 +5,21 @@ import { useCategories } from '../../store/features/categories/useCategories';
 import { CategoryIcon } from '../Admin/Navigation/CategoryIcon';
 import { HomeIcon } from '../../assets/icons';
 
+// Helper function to generate a URL-friendly slug
+const slugify = (text: string): string => {
+  if (!text) return '';
+  
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')      // Replace spaces with -
+    .replace(/[^\w-]+/g, '')   // Remove all non-word chars
+    .replace(/--+/g, '-')      // Replace multiple - with single -
+    .replace(/^-+/, '')        // Trim - from start of text
+    .replace(/-+$/, '');       // Trim - from end of text
+};
+
 // New interface for category data based on the provided structure
 interface CategoryData {
   id: string;
@@ -48,7 +63,7 @@ const MenuButton: React.FC<MenuButtonProps> = ({
             isSelected && 'bg-white/10 rounded-2xl'
           )}
         >
-          <div className="h-10 w-10 flex items-center justify-center">
+          <div className="w-7 h-7 flex items-center justify-center">
             <HomeIcon />
           </div>
           <p>Packet Hub</p>
@@ -62,9 +77,13 @@ const MenuButton: React.FC<MenuButtonProps> = ({
     // Check if this category is selected
     const isSelected = clientCategory?.id === category.id;
 
+    // Generate the appropriate link
+    // Priority: 1. Custom link (like /creatorshub), 2. Category URL with slug
+    const categoryLink = link || `/category/${slugify(category.title)}`;
+
     return (
       <Link 
-        to={link ? link : `/?category=${category.title.toLocaleLowerCase()}`}
+        to={categoryLink}
         onClick={() => changeClientCategory(category)}
       >
         <div
@@ -76,8 +95,7 @@ const MenuButton: React.FC<MenuButtonProps> = ({
           <CategoryIcon 
             title={category.title} 
             image={category.image} 
-            size="custom" 
-            customSize='h-10 w-10'
+            size="sm" 
           />
           <p>{customTitle || category.previewTitle || category.title}</p>
         </div>
