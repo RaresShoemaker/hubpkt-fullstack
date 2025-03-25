@@ -17,16 +17,19 @@ const MenuCategory: React.FC = () => {
 
 	return (
 		<div className='h-full md:hidden lg:w-full rounded-2xl bg-[#1B1B1B] px-4 py-6 lg:flex flex-col justify-between hidden shadow-[0_0_40px_0_rgba(62,74,192,0.24)]'>
-			<div className='flex flex-col gap-4 align-middle	'>
+			<div className='flex flex-col gap-4 align-middle'>
 				{/* Home button */}
 				<MenuButton predefined='home' />
 				
 				{/* Category buttons */}
 				{items.map((item) => {
-					// Special case for Creator Hub
-					const specialLink = item.title.includes('Creator') 
-					  ? '/creatorshub' 
-					  : undefined;
+					// Find any special categories that need custom links
+					let specialLink = undefined;
+					
+					// Check if this is the Creator Hub item
+					if (item.title.toLowerCase().includes('creator')) {
+						specialLink = '/creatorshub';
+					}
 					
 					return (
 						<MenuButton

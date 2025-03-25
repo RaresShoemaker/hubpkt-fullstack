@@ -46,7 +46,7 @@ interface MenuButtonProps {
 const MenuButton: React.FC<MenuButtonProps> = ({ 
   predefined, 
   category, 
-  link = '', 
+  link, 
   customTitle 
 }) => {
   const { clientCategory, changeClientCategory } = useCategories();
@@ -77,14 +77,27 @@ const MenuButton: React.FC<MenuButtonProps> = ({
     // Check if this category is selected
     const isSelected = clientCategory?.id === category.id;
 
-    // Generate the appropriate link
-    // Priority: 1. Custom link (like /creatorshub), 2. Category URL with slug
-    const categoryLink = link || `/category/${slugify(category.title)}`;
+    // Special route for Creator Hub
+    let categoryLink = link;
+    
+    // If no explicit link is provided, determine based on category title
+    if (!categoryLink) {
+      if (category.title.toLowerCase().includes('creator')) {
+        categoryLink = '/creatorshub';
+      } else {
+        categoryLink = `/category/${slugify(category.title)}`;
+      }
+    }
+
+    // Handle click to change the selected category
+    const handleCategoryClick = () => {
+      changeClientCategory(category);
+    };
 
     return (
       <Link 
         to={categoryLink}
-        onClick={() => changeClientCategory(category)}
+        onClick={handleCategoryClick}
       >
         <div
           className={cn(

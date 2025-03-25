@@ -117,7 +117,7 @@ const CategoryPage: React.FC = () => {
       background={<BackgroundTransition backgroundGradient='#090D23' />}
       backgroundTransition={<BlurTransition color='#090D23' blur={40} className='bottom-0 h-[230px]' />}
     >
-      <div className='w-full p-6 md:p-8 lg:p-12 -mt-56 flex flex-col gap-10'>
+      <div className='w-full p-6 md:p-8 lg:p-12 -mt-48 flex flex-col gap-10'>
         {/* Loading state */}
         {(loading.fetchCardsByCategory || items.length === 0) && (
           <div className="flex justify-center">
