@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { cn } from '../../../lib/utils';
 import { DesignElement } from '../../../store/features/categoryDesigns/categoryDesigns.types';
 import ButtonBase from '../Buttons/ButtonBase';
-import { Edit, Trash2, Code, Eye } from 'lucide-react';
+import { Trash2, Eye, Settings } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useCategoryDesigns } from '../../../store/features/categoryDesigns/useCategoryDesigns';
 
@@ -15,7 +15,7 @@ interface CategoryDesignCardProps {
 
 const CategoryDesignCard: React.FC<CategoryDesignCardProps> = ({
   designElement,
-  // onEdit,
+  onEdit,
   onDelete,
   isDark
 }) => {
@@ -30,13 +30,6 @@ const CategoryDesignCard: React.FC<CategoryDesignCardProps> = ({
     selectDesignElement(designElement);
     // Navigate to the preview page
     navigate(`/categorydesign/${designElement.id}`);
-  };
-  
-  const handleEdit = () => {
-    // Set the current design element in the state
-    selectDesignElement(designElement);
-    // Navigate to the editor page
-    navigate(`/categorydesign/${designElement.id}/edit`);
   };
 
   return (
@@ -74,20 +67,20 @@ const CategoryDesignCard: React.FC<CategoryDesignCardProps> = ({
             "absolute inset-0 flex flex-col items-center justify-center gap-3 bg-black bg-opacity-50 transition-opacity",
           )}>
             <ButtonBase
-              variant="primary"
-              onClick={handleEdit}
-              leftIcon={<Edit size={16} />}
-              className="w-32"
-            >
-              Edit
-            </ButtonBase>
-            <ButtonBase
               variant="secondary"
               onClick={handlePreview}
               leftIcon={<Eye size={16} />}
               className="w-32"
             >
               Preview
+            </ButtonBase>
+            <ButtonBase
+              variant="primary"
+              onClick={onEdit}
+              leftIcon={<Settings size={16} />}
+              className="w-32"
+            >
+              Configure
             </ButtonBase>
           </div>
         )}
@@ -135,22 +128,21 @@ const CategoryDesignCard: React.FC<CategoryDesignCardProps> = ({
               ? "bg-dark-background text-dark-text-accent" 
               : "bg-light-background text-light-text-accent"
           )}>
-            <Code size={14} />
             <span>{designElement.htmlElements.length} HTML elements</span>
           </div>
         )}
 
         {/* Actions */}
-        <div className="flex justify-end gap-2 mt-2">
+        <div className="flex justify-between gap-2 mt-2">
           <ButtonBase
-            variant="ghost"
-            onClick={handleEdit}
-            className={cn("px-2 py-1")}
-            leftIcon={<Edit size={16} />}
+            variant="ghost" 
+            onClick={onEdit}
+            className="px-2 py-1"
+            leftIcon={<Settings size={16} />}
           >
-            Edit
+            Configure
           </ButtonBase>
-
+          
           <ButtonBase
             variant="ghost"
             onClick={onDelete}

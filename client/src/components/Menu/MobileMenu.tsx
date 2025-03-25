@@ -2,12 +2,11 @@ import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
-
-import MenuButton from './MenuButtons';
-import { HomeIcon, MediaIcon, MusicIcon, GamesIcon, CasinoIcon, TechnologyIcon, CreatorsIcon, NewsIcon } from '../../assets/icons';
+import { useCategories } from '../../store/features/categories/useCategories';
 
 const MobileMenu = () => {
 	const [isOpen, setIsOpen] = useState(false);
+	const { items, changeClientCategory } = useCategories();
 
 	// Lock body scroll when menu is open
 	useEffect(() => {
@@ -21,16 +20,20 @@ const MobileMenu = () => {
 		};
 	}, [isOpen]);
 
-	const menuItems = [
-		{ title: 'Packet Hub', icon: <HomeIcon />, query: 'home' },
-		{ title: 'Creator Hub', icon: <CreatorsIcon />, link: '/creatorhub', query: 'creators' },
-		{ title: 'News Hub', icon: <NewsIcon />, query: 'news', link: '/newshub' },
-		{ title: 'Media', icon: <MediaIcon />, query: 'media' },
-		{ title: 'Music', icon: <MusicIcon />, query: 'music' },
-		{ title: 'Games', icon: <GamesIcon />, query: 'games' },
-		{ title: 'Casino', icon: <CasinoIcon />, query: 'casino' },
-		{ title: 'Technology', icon: <TechnologyIcon />, query: 'technology' }
-	];
+	// Helper function to generate a URL-friendly slug
+	const slugify = (text: string): string => {
+		if (!text) return '';
+		
+		return text
+			.toString()
+			.toLowerCase()
+			.trim()
+			.replace(/\s+/g, '-')      // Replace spaces with -
+			.replace(/[^\w-]+/g, '')   // Remove all non-word chars
+			.replace(/--+/g, '-')      // Replace multiple - with single -
+			.replace(/^-+/, '')        // Trim - from start of text
+			.replace(/-+$/, '');       // Trim - from end of text
+	};
 
 	const MenuContent = () => (
 		<div className='fixed inset-0 bg-[#1B1B1B] z-50 lg:hidden pt-7'>
@@ -45,12 +48,44 @@ const MobileMenu = () => {
 					</button>
 				</div>
 
-				<div className='flex-1 flex flex-col gap-3'>
-					{menuItems.map((item, i) => (
-						<div key={i} onClick={() => setIsOpen(false)}>
-							<MenuButton title={item.title} icon={item.icon} query={item.query} link={item.link}/>
-						</div>
-					))}
+				<div className='flex-1 flex flex-col gap-3 p-4'>
+					{/* Home Button */}
+					<Link 
+						to="/" 
+						onClick={() => {
+							setIsOpen(false);
+							changeClientCategory(null);
+						}}
+						className='flex items-center p-2 gap-2 text-white hover:bg-white/10 rounded-lg'
+					>
+						<span>Packet Hub</span>
+					</Link>
+
+					{/* Categories */}
+					{items.map((category) => {
+						let categoryLink;
+						
+						// Check if this is the Creator Hub item
+						if (category.title.toLowerCase().includes('creator')) {
+							categoryLink = '/creatorshub';
+						} else {
+							categoryLink = `/category/${slugify(category.title)}`;
+						}
+
+						return (
+							<Link
+								key={category.id}
+								to={categoryLink}
+								onClick={() => {
+									setIsOpen(false);
+									changeClientCategory(category);
+								}}
+								className='flex items-center p-2 gap-2 text-white hover:bg-white/10 rounded-lg'
+							>
+								<span>{category.title}</span>
+							</Link>
+						);
+					})}
 				</div>
 
 				<div className='mt-auto pb-6 px-6'>

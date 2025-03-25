@@ -31,15 +31,23 @@ const ButtonEditor: React.FC<ButtonEditorProps> = ({
   const [buttonText, setButtonText] = useState<string>('');
   const [buttonStyle, setButtonStyle] = useState<ButtonStyle>('primary');
   const [buttonLink, setButtonLink] = useState<string>('');
+  
+  // Track the current position separately from other button properties
+  const [currentPosition, setCurrentPosition] = useState(initialValue.position);
 
   useEffect(() => {
     if(initialValue) {
-    setButtonText(initialValue.text);
-    setButtonStyle(initialValue.style);
-    setButtonLink(initialValue.link);
+      setButtonText(initialValue.text);
+      setButtonStyle(initialValue.style);
+      setButtonLink(initialValue.link);
+      setCurrentPosition(initialValue.position);
     }
-  }
-  , [initialValue]);
+  }, [initialValue]);
+
+  // This effect updates the current position when it changes from outside
+  useEffect(() => {
+    setCurrentPosition(initialValue.position);
+  }, [initialValue.position]);
 
   const handleTextChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setButtonText(e.target.value);
@@ -58,7 +66,7 @@ const ButtonEditor: React.FC<ButtonEditorProps> = ({
       text: buttonText,
       style: buttonStyle,
       link: buttonLink,
-      position: initialValue.position
+      position: currentPosition // Use the current position instead of initialValue.position
     };
 
     await editHtmlElement({
@@ -68,7 +76,7 @@ const ButtonEditor: React.FC<ButtonEditorProps> = ({
         type: 'button',
         position: createPositionClasses(updatedButton.position)
       }
-    })
+    });
   
     // Call the onUpdate function with the updated data
     onUpdate(initialValue.id, updatedButton);
@@ -115,10 +123,34 @@ const ButtonEditor: React.FC<ButtonEditorProps> = ({
       </div>
       
       <div className="mb-4">
-        <label className="text-white text-sm block mb-1">Button Size</label>
-        <div className="grid grid-cols-2 gap-3">
+        <label className="text-white text-sm block mb-1">Button Position</label>
+        <div className="grid grid-cols-2 gap-2 mb-2">
+          <div>
+            <label className="text-gray-400 text-xs">Column Start</label>
+            <div className="text-white bg-gray-700 px-3 py-2 rounded border border-gray-600">
+              {currentPosition.colStart}
+            </div>
+          </div>
+          <div>
+            <label className="text-gray-400 text-xs">Column Span</label>
+            <div className="text-white bg-gray-700 px-3 py-2 rounded border border-gray-600">
+              {currentPosition.colSpan}
+            </div>
+          </div>
+          <div>
+            <label className="text-gray-400 text-xs">Row Start</label>
+            <div className="text-white bg-gray-700 px-3 py-2 rounded border border-gray-600">
+              {currentPosition.rowStart}
+            </div>
+          </div>
+          <div>
+            <label className="text-gray-400 text-xs">Row Span</label>
+            <div className="text-white bg-gray-700 px-3 py-2 rounded border border-gray-600">
+              {currentPosition.rowSpan}
+            </div>
+          </div>
         </div>
-        <p className="text-gray-400 text-xs mt-1">Columns: 1-12, Rows: 1-6</p>
+        <p className="text-gray-400 text-xs mt-1">Position is set by dragging in the grid. Columns: 1-12, Rows: 1-6</p>
       </div>
       
       <div className="flex gap-2">
