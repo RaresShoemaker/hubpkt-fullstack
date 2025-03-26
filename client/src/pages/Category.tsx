@@ -141,41 +141,13 @@ const CategoryPage: React.FC = () => {
 	const currentDesigns = designs[currentDevice] || [];
 	const currentDesign = currentDesigns.length > 0 ? currentDesigns[0] : null;
 
-	// Convert html elements to formats that can be used by our components
-	const getHtmlElements = () => {
-		if (!currentDesign?.htmlElements || currentDesign.htmlElements.length === 0) {
-			return [];
-		}
-
-		return currentDesign.htmlElements.map((element) => {
-			// Format position string properly if needed
-			if (element.htmlTag && element.htmlTag.position) {
-				// Make sure position is properly formatted
-				const position = element.htmlTag.position;
-				if (typeof position === 'string' && !position.includes('col-start')) {
-					// If position isn't in the right format, try to parse and convert it
-					try {
-						const posData = JSON.parse(position);
-						element.htmlTag.position = `col-start-${posData.colStart} col-span-${posData.colSpan} row-start-${posData.rowStart} row-span-${posData.rowSpan}`;
-					} catch (e) {
-						// If parsing fails, leave as is
-						console.log(e);
-					}
-				}
-			}
-			return element;
-		});
-	};
-
-	const htmlElements = getHtmlElements();
-	const hasHtmlElements = htmlElements.length > 0;
-
 	return (
 		<MainLayout
 			menu={<MenuCategory />}
 			heroContainer={
 				<Hero image={currentDesign?.image || './Home1.jpg'}>
-					{hasHtmlElements && <HeroElements htmlTags={htmlElements} />}
+					{/* Render HTML elements */}
+					{currentDesign?.htmlElements && <HeroElements htmlTags={currentDesign.htmlElements} />}
 				</Hero>
 			}
 			background={

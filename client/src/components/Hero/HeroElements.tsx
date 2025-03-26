@@ -1,6 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import ButtonHero from './HeroButton';
 import { ButtonStyle } from './HeroButton';
+import { parsePositionFromClasses } from '../../utils/designElementUtils';
+import HeroGridItem from './HeroGridItem';
 
 interface HtmlTag {
 	link?: string;
@@ -33,57 +36,36 @@ interface HeroElementsProps {
 
 // Main HeroElements component focused solely on buttons
 const HeroElements: React.FC<HeroElementsProps> = ({ htmlTags }) => {
-	// const renderButton = (element: HtmlElement) => {
-	//   const { htmlTag } = element;
 
-	//   // Handle direct button elements
-	//   if (htmlTag.type === 'button') {
-	//     const { text, style, position, link } = htmlTag;
+	
 
-	//     return (
-	//       <div key={element.id} className={position + " flex items-center justify-center"}>
-	//         <ButtonHero
-	//           text={text || 'Button'}
-	//           style={style || 'secondary'}
-	//           link={link}
-	//           className="w-full"
-	//         />
-	//       </div>
-	//     );
-	//   }
-
-	//   // Handle nested CTA structure if it exists
-	//   if (htmlTag.data?.cta) {
-	//     const { text, style, position, link } = htmlTag.data.cta;
-
-	//     return (
-	//       <div key={element.id} className={position + " flex items-center justify-center"}>
-	//         <ButtonHero
-	//           text={text || 'Button'}
-	//           style={style || 'secondary'}
-	//           link={link}
-	//           className="w-full"
-	//         />
-	//       </div>
-	//     );
-	//   }
-
-	//   return null;
-	// };
+	const getElementStyle = (position: any) => {
+    return {
+      gridColumnStart: position.colStart,
+      gridColumnEnd: position.colStart + position.colSpan,
+      gridRowStart: position.rowStart,
+      gridRowEnd: position.rowStart + position.rowSpan,
+    };
+  };
 
 	return (
 		<>
 			{/* {htmlTags.map(element => renderButton(element))} */}
 			{htmlTags.map((element) => {
+				console.log(element.htmlTag.position);
 				return (
-					<div key={element.id} className={element.htmlTag.position + ' flex items-center justify-center'}>
+					<HeroGridItem
+						key={element.id}
+						style={getElementStyle(parsePositionFromClasses(element.htmlTag.position))}
+					>
 						<ButtonHero
 							text={element.htmlTag.text || 'Button'}
-							style={element.htmlTag.style || 'secondary'}
+							style={element.htmlTag.style}
+							style-position={getElementStyle(parsePositionFromClasses(element.htmlTag.position))}
 							link={element.htmlTag.link}
 							className='w-full'
 						/>
-					</div>
+					</HeroGridItem>
 				);
 			})}
 		</>
