@@ -1,4 +1,4 @@
-import React, { CSSProperties } from 'react';
+import React, {useMemo} from 'react';
 import { cn } from '../../lib/utils';
 
 interface HeroContainerProps {
@@ -8,14 +8,10 @@ interface HeroContainerProps {
   columns?: number;
   rows?: number;
   fullHeight?: boolean;
-  gapX?: number; // horizontal gap in pixels
-  gapY?: number; // vertical gap in pixels
-  padding?: {
-    x?: number;
-    y?: number;
-  };
   // Media queries will be handled via className and CSS
   gridClassName?: string;
+  minCellWidth?: number;
+  minCellHeight?: number;
 }
 
 const HeroContainer: React.FC<HeroContainerProps> = ({
@@ -25,19 +21,22 @@ const HeroContainer: React.FC<HeroContainerProps> = ({
   columns = 12,
   rows = 6,
   fullHeight = false,
-  gapX = 8,
-  gapY = 8,
-  padding = { x: 16, y: 0 },
   gridClassName,
+  minCellWidth = 80,
+  minCellHeight = 80
 }) => {
   // Create grid styles
-  const gridStyles: CSSProperties = {
-    gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`,
-    gridTemplateRows: `repeat(${rows}, minmax(0, 1fr))`,
-    columnGap: `${gapX}px`,
-    rowGap: `${gapY}px`,
-    padding: `${padding.y}px ${padding.x}px`
-  };
+  const gridStyles = useMemo(() => ({
+    display: 'grid',
+    gridTemplateColumns: `repeat(${columns}, minmax(${minCellWidth}px, 1fr))`,
+    gridTemplateRows: `repeat(${rows}, minmax(${minCellHeight}px, 1fr))`,
+    width: '100%',
+    height: '100%',
+    minWidth: `${minCellWidth * columns}px`, // Ensure minimum grid width
+    minHeight: `${minCellHeight * rows}px`,  // Ensure minimum grid height
+    position: 'relative' as const,
+    overflow: 'auto' as const
+  }), [columns, rows, minCellWidth, minCellHeight]);
 
   return (
     <div 

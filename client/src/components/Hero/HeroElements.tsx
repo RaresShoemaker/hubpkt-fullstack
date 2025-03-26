@@ -1,54 +1,75 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
-import HeroGridItem from './HeroGridItem';
 import ButtonHero from './HeroButton';
-
-// Define TypeScript interfaces for our component props
-// Import the ButtonStyle type from ButtonHero
 import { ButtonStyle } from './HeroButton';
+import { parsePositionFromClasses } from '../../utils/designElementUtils';
+import HeroGridItem from './HeroGridItem';
 
 interface HtmlTag {
-  link?: string;
-  text?: string;
-  type: string;
-  style?: ButtonStyle;
-  position: string;
+	link?: string;
+	text?: string;
+	type: string;
+	style?: ButtonStyle;
+	position: string;
+	data?: {
+		cta?: {
+			text?: string;
+			style?: ButtonStyle;
+			link?: string;
+			position: string;
+		};
+	};
 }
 
 export interface HtmlElement {
-  id: string;
-  designElementId: string;
-  htmlTag: HtmlTag;
-  createdAt: string;
-  updatedAt: string;
-  deletedAt?: string | null;
+	id: string;
+	designElementId: string;
+	htmlTag: HtmlTag;
+	createdAt: string;
+	updatedAt: string;
+	deletedAt?: string | null;
 }
 
 interface HeroElementsProps {
-  htmlTags: HtmlElement[];
+	htmlTags: HtmlElement[];
 }
 
 // Main HeroElements component focused solely on buttons
 const HeroElements: React.FC<HeroElementsProps> = ({ htmlTags }) => {
-  const renderButton = (element: HtmlElement) => {
-    const { htmlTag } = element;
-    const { text, style, position, link } = htmlTag;
-    
-    return (
-      <HeroGridItem key={element.id} gridClasses={position} align="center">
-        <ButtonHero
-          text={text}
-          style={style}
-          link={link}
-        />
-      </HeroGridItem>
-    );
+
+	
+
+	const getElementStyle = (position: any) => {
+    return {
+      gridColumnStart: position.colStart,
+      gridColumnEnd: position.colStart + position.colSpan,
+      gridRowStart: position.rowStart,
+      gridRowEnd: position.rowStart + position.rowSpan,
+    };
   };
 
-  return (
-    <>
-      {htmlTags.map(element => renderButton(element))}
-    </>
-  );
+	return (
+		<>
+			{/* {htmlTags.map(element => renderButton(element))} */}
+			{htmlTags.map((element) => {
+				console.log(element.htmlTag.position);
+				return (
+					<HeroGridItem
+						key={element.id}
+						style={getElementStyle(parsePositionFromClasses(element.htmlTag.position))}
+					>
+						<ButtonHero
+							text={element.htmlTag.text || 'Button'}
+							style={element.htmlTag.style}
+							style-position={getElementStyle(parsePositionFromClasses(element.htmlTag.position))}
+							link={element.htmlTag.link}
+							className='w-full'
+						/>
+					</HeroGridItem>
+				);
+			})}
+		</>
+	);
 };
 
 export default HeroElements;

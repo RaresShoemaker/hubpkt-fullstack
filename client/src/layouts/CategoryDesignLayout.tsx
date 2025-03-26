@@ -64,9 +64,9 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
 			link: buttonData.link,
 			type: 'button',
 			position: {
-				colStart: 7,
-				rowStart: 2,
-				colSpan: (currentDesign?.device === 'mobile' || currentDesign?.device === 'tablet') ? 4 : 2,
+				colStart: (currentDesign?.device === 'mobile' || currentDesign?.device === 'tablet') ? 2 : 7,
+				rowStart: (currentDesign?.device === 'mobile' || currentDesign?.device === 'tablet') ? 4 : 2,
+				colSpan: (currentDesign?.device === 'mobile' || currentDesign?.device === 'tablet') ? 3 : 2,
 				rowSpan: 1
 			}
 		};
