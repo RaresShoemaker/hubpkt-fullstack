@@ -89,7 +89,11 @@ export async function streamToBuffer(stream: NodeJS.ReadableStream): Promise<Buf
 	const chunks: Buffer[] = [];
 
 	for await (const chunk of stream) {
-		chunks.push(Buffer.from(chunk));
+		if (Buffer.isBuffer(chunk)) {
+			chunks.push(chunk);
+		} else {
+			chunks.push(Buffer.from(chunk as string));
+		}
 	}
 
 	return Buffer.concat(chunks);

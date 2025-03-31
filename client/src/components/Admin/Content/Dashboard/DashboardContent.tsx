@@ -85,7 +85,7 @@ const DashboardContent: React.FC = () => {
 				<GenericDragDrop
 				items={items}
 				onReorder={(updatedItems) => setNewOrder(updatedItems.map((item) => item.id))}
-				renderItem={(item, isDragging, isDragOver) => (
+				renderItem={(item, _isDragging, isDragOver) => (
 					<DraggableItemCard
 						key={item.id}
 						item={item}

@@ -206,7 +206,7 @@ export const deleteCard = async (req: Request, res: Response): Promise<void> => 
     }
 };
 
-export const getCardsHomepage = catchAsync(async (req: Request, res: Response) => {
+export const getCardsHomepage = catchAsync(async (_req: Request, res: Response) => {
     const cards = await CardServiceFetch.getCardsPreviewHomepage();
     res.json({
         status: StatusCodes.OK,

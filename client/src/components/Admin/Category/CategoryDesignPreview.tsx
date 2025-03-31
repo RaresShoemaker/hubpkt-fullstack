@@ -88,9 +88,6 @@ const CategoryDesignPreview: React.FC = () => {
         columns={12}
         rows={6}
         fullHeight={true}
-        gapX={16}
-        gapY={12}
-        padding={{ x: 16, y: 16 }}
         gridClassName="p-4 md:p-8 lg:p-12"
         background={
           <div className="relative h-full w-full">
