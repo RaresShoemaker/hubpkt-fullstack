@@ -1,13 +1,13 @@
-import { ErrorRequestHandler, Request, Response, NextFunction } from 'express'
+import { Request, Response, NextFunction } from 'express'
 import httpStatus from 'http-status'
 
 import {config} from '../config/environment'
 
 export const errorHandler = (
     err: any,
-    req: Request,
+    _req: Request,
     res: Response,
-    next: NextFunction
+    _next: NextFunction
 ) => {
     let statusCode = 500
     if (err?.code) {

@@ -158,7 +158,7 @@ export const deleteCategory = catchAsync(async (req: Request, res: Response) => 
   res.status(StatusCodes.NO_CONTENT).send();
 });
 
-export const fetchClientCategories = catchAsync(async (req: Request, res: Response) => {
+export const fetchClientCategories = catchAsync(async (_req: Request, res: Response) => {
   const categories = await CategoryServices.fetchClientCategories();
 
   res.json({

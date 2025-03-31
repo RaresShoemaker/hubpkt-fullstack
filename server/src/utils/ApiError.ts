@@ -1,5 +1,3 @@
-import httpStatus from 'http-status'
-
 class ApiError extends Error {
     statusCode: number
     isOperational: boolean

@@ -30,7 +30,7 @@ export const findUserById = catchAsync(async (req: Request, res: Response) => {
   res.status(StatusCodes.OK).json({ ...omitPassword(user) });
 });
 
-export const logoutUser = catchAsync(async (req: Request, res: Response) => {
+export const logoutUser = catchAsync(async (_req: Request, res: Response) => {
   res.clearCookie('token');
   res.status(StatusCodes.OK).json({ message: 'Logged out successfully' });
 });
