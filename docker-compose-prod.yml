@@ -22,7 +22,7 @@ services:
   server:
     build:
       context: ./server
-      dockerfile: Dockerfile.production
+      dockerfile: Dockerfile.prod
     container_name: hubpkt-server-prod
     restart: unless-stopped
     ports:
@@ -52,7 +52,7 @@ services:
   client:
     build:
       context: ./client
-      dockerfile: Dockerfile.production
+      dockerfile: Dockerfile.prod
     container_name: hubpkt-client-prod
     restart: unless-stopped
     ports:
