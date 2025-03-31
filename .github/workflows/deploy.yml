@@ -1,0 +1,47 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [ main ]  # Adjust this to your main branch name
+  workflow_dispatch:    # Allow manual triggering
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Set up SSH
+      uses: webfactory/ssh-agent@v0.7.0
+      with:
+        ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+        
+    - name: Add host key to known_hosts
+      run: |
+        mkdir -p ~/.ssh
+        ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+        
+    - name: Deploy to VPS
+      env:
+        DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        DEPLOY_HOST: ${{ secrets.VPS_HOST }}
+        DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+      run: |
+        # Pull latest code, rebuild and restart containers
+        ssh $DEPLOY_USER@$DEPLOY_HOST "cd $DEPLOY_PATH && \
+          git pull && \
+          docker-compose -f docker-compose-prod.yml down && \
+          docker-compose -f docker-compose-prod.yml build --no-cache && \
+          docker-compose -f docker-compose-prod.yml up -d && \
+          docker system prune -af --volumes"
+          
+    - name: Verify deployment
+      env:
+        DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        DEPLOY_HOST: ${{ secrets.VPS_HOST }}
+      run: |
+        # Check if containers are running
+        ssh $DEPLOY_USER@$DEPLOY_HOST "docker ps"

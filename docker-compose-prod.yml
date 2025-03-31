@@ -1,0 +1,78 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:latest
+    container_name: hubpkt-postgres-prod
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-postgres}
+      - POSTGRES_DB=${POSTGRES_DB:-hubpkt}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.production
+    container_name: hubpkt-server-prod
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:4001:4001"  # Only expose locally
+    environment:
+      - NODE_ENV=production
+      - ENV_TYPE=prod
+      - DATABASE_URL=${DATABASE_URL}
+      - JWT_SECRET=${JWT_SECRET}
+      - API_KEY=${API_KEY}
+      - R2_ACCOUNT_ID=${R2_ACCOUNT_ID}
+      - R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID}
+      - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY}
+      - R2_PUBLIC_URL=${R2_PUBLIC_URL}
+      - CLIENT_ORIGIN=https://peekcode.dev
+    depends_on:
+      - postgres
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:4001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile.production
+    container_name: hubpkt-client-prod
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:3000"  # Only expose locally
+    environment:
+      - VITE_API_BASE_URL=${VITE_API_BASE_URL}
+      - VITE_API_KEY=${API_KEY}
+      - VITE_ENV_TYPE=prod
+      - VITE_JOTFORM_API_KEY=${VITE_JOTFORM_API_KEY}
+      - VITE_JOTFORM_FORM_ID=${VITE_JOTFORM_FORM_ID}
+      - VITE_JOTFORM_FORM_CREATORS_ID=${VITE_JOTFORM_FORM_CREATORS_ID}
+      - VITE_TRACKING_ID_GA=${VITE_TRACKING_ID_GA}
+    depends_on:
+      - server
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
+
+volumes:
+  postgres-data:
