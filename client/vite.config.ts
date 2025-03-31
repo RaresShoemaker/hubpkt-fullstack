@@ -5,51 +5,32 @@ import path from 'path';
 
 export default defineConfig({
   server: {
-    host: true, // This will allow network access
+    host: true,
     port: 5173
   },
   plugins: [svgr(), react()],
   build: {
+    sourcemap: process.env.NODE_ENV !== 'production', // Only include sourcemaps in dev
     rollupOptions: {
       output: {
-        manualChunks: (id) => {
-          // Vendor dependencies
-          if (id.includes('node_modules')) {
-            if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
-              return 'vendor-react';
-            }
-            return 'vendors';
-          }
-
-          // SVG chunks based on directories
-          if (id.includes('src/assets/')) {
-            if (id.includes('src/assets/games/')) {
-              return 'svg-games';
-            }
-            if (id.includes('src/assets/casino/')) {
-              return 'svg-casino';
-            }
-            if (id.includes('src/assets/media/')) {
-              return 'svg-media';
-            }
-            if (id.includes('src/assets/music/')) {
-              return 'svg-music';
-            }
-            if (id.includes('src/assets/icons/')) {
-              return 'svg-icons';
-            }
-          }
-
-          // Other app code
-          if (id.includes('src/')) {
-            if (id.includes('src/components/') || id.includes('src/context/')) {
-              return 'ui-components';
-            }
-            if (id.includes('src/lib/')) {
-              return 'utils';
-            }
-          }
-        }
+        manualChunks: {
+          // Group React and related packages together
+          'react-vendor': [
+            'react', 
+            'react-dom', 
+            'react-router-dom',
+            'react-redux',
+            '@reduxjs/toolkit',
+            'react-ga4'
+          ],
+          // Other vendor dependencies
+          'ui-libs': [
+            'axios',
+            'clsx',
+            'tailwind-merge',
+            'lodash'
+          ]
+        },
       }
     },
     chunkSizeWarningLimit: 1000,
@@ -59,4 +40,8 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  // Explicitly define external deps to ensure consistent React version
+  optimizeDeps: {
+    include: ['react', 'react-dom', 'react-router-dom']
+  }
 });
