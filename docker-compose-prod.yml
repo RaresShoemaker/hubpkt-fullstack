@@ -56,7 +56,7 @@ services:
     container_name: hubpkt-client-prod
     restart: unless-stopped
     ports:
-      - "127.0.0.1:3000:3000"  # Only expose locally
+      - "127.0.0.1:3000:80"  # Only expose locally
     environment:
       - VITE_API_BASE_URL=${VITE_API_BASE_URL}
       - VITE_API_KEY=${API_KEY}
