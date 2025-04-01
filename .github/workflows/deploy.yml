@@ -21,7 +21,6 @@ jobs:
         
     - name: Add host key to known_hosts
       run: |
-        mkdir -p ~/.ssh
         ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
         
     - name: Deploy to VPS
