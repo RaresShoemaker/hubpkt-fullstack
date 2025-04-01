@@ -1,5 +1,4 @@
-import React, { useEffect, useMemo } from 'react';
-import ReactGA from 'react-ga4';
+import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { store } from './store/store';
@@ -18,11 +17,6 @@ import AnalyticsTracker from './components/AnalyticsTracker';
 import { ThemeProvider } from './components/Admin/Theme/ThemeProvider';
 
 const App: React.FC = () => {
-	const TRACKING_ID = useMemo(() => import.meta.env.VITE_TRACKING_ID_GA, []);
-
-	useEffect(() => {
-		ReactGA.initialize(TRACKING_ID);
-	}, [TRACKING_ID]);
 
 	return (
 		<Provider store={store}>
