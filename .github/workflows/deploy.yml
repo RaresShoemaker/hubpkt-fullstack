@@ -23,6 +23,7 @@ jobs:
       run: |
         mkdir -p ~/.ssh
         ssh-keyscan -H ${{ secrets.DEPLOY_HOST }} >> ~/.ssh/known_hosts
+        ssh-keyscan -H github.com >> ~/.ssh/known_hosts
         
     - name: Deploy to VPS
       env:
@@ -30,9 +31,11 @@ jobs:
         DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
         DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
       run: |
-        # Pull latest code, rebuild and restart containers
+        # Configure Git on the VPS
         ssh $DEPLOY_USER@$DEPLOY_HOST "cd $DEPLOY_PATH && \
-          git pull && \
+          git config --local core.sshCommand 'ssh -i ~/.ssh/github_actions' && \
+          git fetch --all && \
+          git reset --hard origin/main && \
           docker-compose -f docker-compose-prod.yml down && \
           docker-compose -f docker-compose-prod.yml build --no-cache && \
           docker-compose -f docker-compose-prod.yml up -d && \
