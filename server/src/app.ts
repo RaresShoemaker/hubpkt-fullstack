@@ -11,6 +11,9 @@ import { apiKeyAuth } from './middlewares/apiKey';
 
 const app = express();
 
+
+app.set('trust proxy', 1); // Trust first proxy (for Heroku, AWS, etc.)
+
 // Configure CORS based on environment
 const allowedOrigins = process.env.NODE_ENV === 'production'
   ? [process.env.CLIENT_ORIGIN || 'https://peekcode.dev', /\.peekcode\.dev$/]
@@ -31,8 +34,6 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   allowedHeaders: ['Content-Type', 'x-api-key', 'Authorization'],
 }));
-
-app.set('trust proxy', 1); // Trust first proxy (for Heroku, AWS, etc.)
 
 // Add simple application-level rate limiting
 // Note: This is a backup - main rate limiting should happen at Nginx
@@ -77,5 +78,6 @@ app.use('/api', router);
 
 // Error handler
 app.use(errorHandler);
+
 
 export { app };

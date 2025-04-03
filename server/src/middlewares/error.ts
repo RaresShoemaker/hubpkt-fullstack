@@ -32,5 +32,11 @@ export const errorHandler = (
         ...(config.NODE_ENV === 'development' && { stack: err.stack }),
     }
 
+    console.log('Error: ', {
+        message: err.message,
+        stack: err.stack,
+        statusCode,
+    })
+    
     res.status(statusCode).send(response)
 }
