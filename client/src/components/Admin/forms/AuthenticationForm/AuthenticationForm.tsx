@@ -152,6 +152,11 @@ const AuthenticationForm: React.FC = () => {
 								</button>
 							</div>
 						</form>
+
+						<div style={{position: 'fixed', bottom: 0, left: 0, background: '#eee', padding: '5px', fontSize: '12px'}}>
+  API Base URL: {import.meta.env.VITE_API_BASE_URL || "Not directly accessible"}
+	API Key Test: {import.meta.env.VITE_API_KEY || "Not directly accessible"}
+</div>
 					</TabPanel>
 				</TabPanels>
 			</TabGroup>
