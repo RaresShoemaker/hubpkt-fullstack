@@ -32,6 +32,8 @@ app.use(cors({
   allowedHeaders: ['Content-Type', 'x-api-key', 'Authorization'],
 }));
 
+app.set('trust proxy', 1); // Trust first proxy (for Heroku, AWS, etc.)
+
 // Add simple application-level rate limiting
 // Note: This is a backup - main rate limiting should happen at Nginx
 const apiLimiter = rateLimit({
