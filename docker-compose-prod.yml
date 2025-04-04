@@ -18,6 +18,22 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+  
+  migration:
+    build:
+      context: ./server
+      dockerfile: Dockerfile.prod
+    container_name: hubpkt-migration-prod
+    environment:
+      - NODE_ENV=production
+      - DATABASE_URL=${DATABASE_URL}
+    command: npx prisma migrate deploy
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - app-network
+    restart: "no"  # Run once and exit
 
   server:
     build:
@@ -39,7 +55,10 @@ services:
       - R2_PUBLIC_URL=${R2_PUBLIC_URL}
       - CLIENT_ORIGIN=https://peekcode.dev
     depends_on:
-      - postgres
+      postgres:
+          condition: service_healthy
+      migration:
+          condition: service_completed_successfully
     networks:
       - app-network
     healthcheck:
