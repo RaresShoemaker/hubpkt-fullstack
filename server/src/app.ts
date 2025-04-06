@@ -60,7 +60,7 @@ const apiLimiter = rateLimit({
 });
 
 // Apply rate limiting to all API routes
-app.use('/api/', apiLimiter);
+// app.use('/api/', apiLimiter);
 
 // Add security headers
 app.use(helmet());

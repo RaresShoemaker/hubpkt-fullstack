@@ -37,7 +37,7 @@ const CreatorsHubPage: React.FC = () => {
       background={<BackgroundTransition backgroundGradient='#090D23' />}
       backgroundTransition={<BlurTransition color='#090D23' blur={40} className='bottom-0 h-[230px]' />}
     >
-      <div className='w-full p-6 md:p-8 lg:p-12 -mt-48'>
+      <div className='w-full pl-6 md:p-8 lg:p-12 -mt-48'>
         {/* Display creator content using CreatorsCategoryContainer */}
         {Object.entries(creatorsCards).length > 0 ? (
           Object.entries(creatorsCards).map(([key, category]) => (

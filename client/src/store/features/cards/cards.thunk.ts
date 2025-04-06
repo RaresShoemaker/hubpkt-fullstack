@@ -310,8 +310,17 @@ export const fetchCardsByCategory = createAsyncThunk(
     try {
       const queryParams = new URLSearchParams();
       
+      // Add pagination parameters
+      if (params.skip !== undefined) {
+        queryParams.append('skip', String(params.skip));
+      }
+      if (params.take !== undefined) {
+        queryParams.append('take', String(params.take));
+      }
+      
+      // Add any other filter parameters
       Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined) {
+        if (key !== 'skip' && key !== 'take' && value !== undefined) {
           if (Array.isArray(value)) {
             value.forEach(item => queryParams.append(key, String(item)));
           } else if (value instanceof Date) {
