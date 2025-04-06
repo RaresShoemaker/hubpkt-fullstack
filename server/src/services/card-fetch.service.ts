@@ -419,7 +419,7 @@ export const getCardsPreviewHomepage = async () => {
         categoryTitle: title,
         previewTitle: previewTitle,
         categoryId: id,
-        hasSquareContent, // Consistent naming
+        hasSquareContent,
         cards
       };
     }));
@@ -572,11 +572,13 @@ export function organizeCardsByCategory(cardsData: any) {
   return categories;
 }
 
-export async function getOrganizedCards(id:string) {
+export async function getOrganizedCards(id:string, take: string, skip: string) {
   try {
     const cardsData = await fetchFilteredCards({
       isAvailable: true,
 			categoryId: id,
+			take: parseInt(take) ?? 20,
+			skip: parseInt(skip) ?? 0,
     });
     
     const categorizedCards = organizeCardsByCategory(cardsData);

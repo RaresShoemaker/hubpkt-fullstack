@@ -28,7 +28,6 @@ const CategoryContent: React.FC<CategoryContentProps> = () => {
   const { currentCategory } = useCategories();
   const { 
     cards, 
-    // handleFetchCardsByCategory, 
     handleFetchFilteredCards,
     loading,
     total
