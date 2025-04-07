@@ -1,16 +1,16 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import { Provider } from 'react-redux';
 import { store } from './store/store';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { 
-  HomePage, 
-  SubmissionPage, 
-  CreatorsHubPage, 
-  AuthenticationPage, 
-  DashboardPage, 
-  CategoryDesignPage,
-  CategoryPage, // Import the new CategoryPage
+	HomePage, 
+	SubmissionPage, 
+	CreatorsHubPage, 
+	AuthenticationPage, 
+	DashboardPage, 
+	CategoryDesignPage,
+	CategoryPage, 
 	NewsPage
 } from './pages/index';
 import SubmissionLayout from './layouts/SubmissionLayout';
@@ -78,6 +78,9 @@ const App: React.FC = () => {
 						path='/newshub'
 						element={<NewsPage />}
 					/>
+
+					{/* Catch all route - redirect to home for non-existing routes */}
+					<Route path='*' element={<Navigate to='/' replace />} />
 				</Routes>
 			</Router>
 		</Provider>
