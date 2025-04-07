@@ -19,7 +19,6 @@ const BlurTransition: React.FC<BlurTransitionProps> = ({
         position: 'absolute',
         background: color,
         filter: `blur(${blur}px)`,
-        // width: '120%',
         zIndex: 1
       }}
     />
