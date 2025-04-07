@@ -102,7 +102,6 @@ export function convertHtmlElementsToButtonElements(htmlElements: HtmlElement[])
 export function convertButtonElementsToHtmlElements(buttonElements: ButtonElementData[]): any[] {
   // Create objects in the format expected by the API
   // Log the transformation process to debug
-  console.log('Converting button elements to HTML elements:', buttonElements);
   
   const transformedElements = buttonElements.map(button => {
     // Create position classes string

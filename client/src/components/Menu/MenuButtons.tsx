@@ -50,7 +50,6 @@ const MenuButton: React.FC<MenuButtonProps> = ({
   customTitle 
 }) => {
   const { clientCategory, changeClientCategory } = useCategories();
-
   // Handle predefined menu items
   if (predefined === 'home') {
     const isSelected = clientCategory === null;
@@ -86,6 +85,10 @@ const MenuButton: React.FC<MenuButtonProps> = ({
         categoryLink = '/creatorshub';
       } else {
         categoryLink = `/category/${slugify(category.title)}`;
+      }
+
+      if ( category.title.toLowerCase().includes('news')) {
+        categoryLink = '/newshub';
       }
     }
 

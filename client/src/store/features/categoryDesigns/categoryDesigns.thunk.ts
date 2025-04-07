@@ -80,10 +80,13 @@ export const createDesignElement = createAsyncThunk(
   'categoryDesigns/createDesignElement',
   async (data: CreateDesignElementRequest, { rejectWithValue }) => {
     try {
+      // Create a FormData object instead of JSON
       const formData = new FormData();
+      
+      // Append each field to the FormData
       formData.append('categoryId', data.categoryId);
       formData.append('device', data.device);
-      formData.append('order', String(data.order));
+      formData.append('order', String(data.order)); // Convert number to string
       
       if (data.backgroundGradient) {
         formData.append('backgroundGradient', data.backgroundGradient);
@@ -97,19 +100,36 @@ export const createDesignElement = createAsyncThunk(
         formData.append('htmlElements', JSON.stringify(data.htmlElements));
       }
       
-      formData.append('image', data.image);
+      // Append the actual file
+      if (data.image) {
+        console.log("Appending image file:", data.image.name, data.image.size);
+        formData.append('image', data.image);
+      } else {
+        console.error("No image file provided");
+      }
 
+      // Create the correct headers for FormData
+      const config = {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      };
+
+      // Now send the request with FormData
       const response = await api.post<ApiResponse<DesignElement>>(
         API_ENDPOINTS.categoryDesigns.createElement,
-        formData
+        formData,
+        config
       );
       
       return response.data.data;
     } catch (error: any) {
+      console.error("Upload error:", error);
       return rejectWithValue(error.response?.data?.message || 'Failed to create design element');
     }
   }
 );
+
 
 // Update a design element
 export const updateDesignElement = createAsyncThunk(
@@ -135,21 +155,31 @@ export const updateDesignElement = createAsyncThunk(
       }
       
       if (data.image) {
+        console.log("Updating with image file:", data.image.name, data.image.size);
         formData.append('image', data.image);
       }
 
-      // Add htmlElements handling - direct update from editor
+      // Add htmlElements handling
       if (data.htmlElements !== undefined) {
         formData.append('htmlElements', JSON.stringify(data.htmlElements));
       }
 
+      // Set the correct headers for FormData
+      const config = {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      };
+
       const response = await api.patch<ApiResponse<DesignElement>>(
         API_ENDPOINTS.categoryDesigns.updateElement(data.id),
-        formData
+        formData,
+        config
       );
       
       return response.data.data;
     } catch (error: any) {
+      console.error("Update error:", error);
       return rejectWithValue(error.response?.data?.message || 'Failed to update design element');
     }
   }

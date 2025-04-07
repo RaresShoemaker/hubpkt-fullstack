@@ -155,7 +155,7 @@ export const CategoryDesignForm: React.FC<CategoryDesignFormProps> = ({
         </div>
       )}
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} encType="multipart/form-data">
         {/* Device Type Selection */}
         <div className="mb-4">
           <label className={cn(

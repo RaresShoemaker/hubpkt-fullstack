@@ -21,7 +21,7 @@ const Navigation: React.FC = () => {
 
 
   return (
-    <div className={`w-72 py-8 px-6 rounded-2xl border transition-colors duration-300 flex flex-col justify-between
+    <div className={`w-72 max-h-[810px] py-8 px-6 rounded-2xl border transition-colors duration-300 flex flex-col justify-between
       ${isDark 
         ? 'bg-dark-surface border-dark-border/20' 
         : 'bg-light-surface border-light-border/20'}`}>

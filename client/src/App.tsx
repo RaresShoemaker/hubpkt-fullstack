@@ -10,7 +10,8 @@ import {
   AuthenticationPage, 
   DashboardPage, 
   CategoryDesignPage,
-  CategoryPage // Import the new CategoryPage
+  CategoryPage, // Import the new CategoryPage
+	NewsPage
 } from './pages/index';
 import SubmissionLayout from './layouts/SubmissionLayout';
 import AnalyticsTracker from './components/AnalyticsTracker';
@@ -71,6 +72,11 @@ const App: React.FC = () => {
 					<Route
 						path='/creatorshub'
 						element={<CreatorsHubPage />}
+					/>
+
+					<Route
+						path='/newshub'
+						element={<NewsPage />}
 					/>
 				</Routes>
 			</Router>
