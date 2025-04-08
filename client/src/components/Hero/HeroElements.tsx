@@ -52,7 +52,6 @@ const HeroElements: React.FC<HeroElementsProps> = ({ htmlTags }) => {
 		<>
 			{/* {htmlTags.map(element => renderButton(element))} */}
 			{htmlTags.map((element) => {
-				console.log(element.htmlTag.position);
 				return (
 					<HeroGridItem
 						key={element.id}

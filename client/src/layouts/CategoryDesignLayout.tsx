@@ -57,7 +57,7 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
 	}, [currentDesign]);
 
 	// Handle creating a new button
-	const handleCreateButton = async (buttonData: { text: string; style: ButtonStyle; link: string }) => {
+	const handleCreateButton = useCallback(async (buttonData: { text: string; style: ButtonStyle; link: string }) => {
 		const newButton = {
 			text: buttonData.text,
 			style: buttonData.style,
@@ -79,15 +79,17 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
 					position: createPositionClasses(newButton.position)
 				}
 			});
-			// Convert the payload to ButtonElementData format
+			
+			// Only add the element if we have a valid payload
 			if (newAddedElement.payload && typeof newAddedElement.payload === 'object') {
-				const convertedElement = convertHtmlElementsToButtonElements([newAddedElement.payload as any])[0];
-				setButtonElements((prev) => [...prev, convertedElement]);
+				// The effect that watches currentDesign.htmlElements will also add this button,
+				// so we don't need to manually add it here
+				// Don't call setButtonElements - rely on the useEffect to update the state
 			}
 		} catch (error) {
 			console.error('Error creating button:', error);
 		}
-	};
+	}, [addHtmlElement, currentDesign?.device, designId]);
 
 	// Handle updating a button
 	const handleUpdateButton = useCallback((id: string, updates: Partial<ButtonElementData>) => {

@@ -40,14 +40,39 @@ const CreatorsHubPage: React.FC = () => {
       <div className='w-full pl-6 md:p-8 lg:p-12 -mt-48'>
         {/* Display creator content using CreatorsCategoryContainer */}
         {Object.entries(creatorsCards).length > 0 ? (
-          Object.entries(creatorsCards).map(([key, category]) => (
-            <div key={key} className="mb-10">
-              <CreatorsCategoryContainer
-                title={category.title}
-                data={category.data}
-              />
-            </div>
-          ))
+          (() => {
+            // Define desired category order
+            const desiredOrder = ['film', 'tv', 'podcast', 'music'];
+            
+            // Convert entries to array that can be sorted
+            const entries = Object.entries(creatorsCards);
+            
+            // Sort entries based on desired order
+            const sortedEntries = entries.sort((a, b) => {
+              const categoryA = a[1].title.toLowerCase();
+              const categoryB = b[1].title.toLowerCase();
+              
+              const indexA = desiredOrder.findIndex(category => categoryA.includes(category));
+              const indexB = desiredOrder.findIndex(category => categoryB.includes(category));
+              
+              // If both categories are in our desired order list, sort by that order
+              if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+              // If only one is in the list, prioritize it
+              if (indexA !== -1) return -1;
+              if (indexB !== -1) return 1;
+              // For categories not in our list, maintain original order
+              return 0;
+            });
+            
+            return sortedEntries.map(([key, category]) => (
+              <div key={key} className="mb-10">
+                <CreatorsCategoryContainer
+                  title={category.title}
+                  data={category.data}
+                />
+              </div>
+            ));
+          })()
         ) : (
           <div className="text-center py-10">
             <p className="text-white text-xl">No creator content available at this time.</p>
