@@ -1,9 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import MainLayout from '../layouts/MainLayout';
 import MenuCategory from '../components/Menu/Menu';
-import Hero from '../components/Hero/Hero';
-import BlurTransition from '../components/BlurTransition';
-import BackgroundTransition from '../components/BackgroundTransition';
 import { useCategories } from '../store/features/categories/useCategories';
 import { useCards } from '../store/features/cards/useCards';
 import { useCategoryDesigns } from '../store/features/categoryDesigns/useCategoryDesigns';
@@ -12,7 +9,11 @@ import CategoryContainer from '../components/Category/CategoryContainer';
 import { Card } from '../store/features/cards/cards.types';
 import { useParams, useLocation } from 'react-router-dom';
 import { DeviceSize } from '../store/features/categoryDesigns/categoryDesigns.types';
-import HeroElements from '../components/Hero/HeroElements';
+import { simplifyDesigns, SimplifiedDesign } from '../utils/designTransformer';
+import { DesignProvider } from '../context/AnimationContext/DesignRotationCotext';
+import RotatingBackground from '../components/Animation/RotatingBackgroundComponent';
+import RotatingBlurTransition from '../components/Animation/RotatingBlurTransition';
+import RotatingHero from '../components/Animation/RotatingHeroComponent';
 
 // Helper function to convert Card[] to CreatorsData[]
 const mapCardsToCreatorsData = (cards: Card[]) => {
@@ -39,6 +40,7 @@ const CategoryPage: React.FC = () => {
 	const { cards, handleFetchCardsByCategory, loading } = useCards();
 	const { designs, fetchDesigns } = useCategoryDesigns();
 	const [currentDevice, setCurrentDevice] = useState<DeviceSize>(DeviceSize.desktop);
+	const [simplifiedDesigns, setSimplifiedDesigns] = useState<SimplifiedDesign[]>([]);
 
 	// Get category from URL query param if available (for backward compatibility)
 	const searchParams = new URLSearchParams(location.search);
@@ -115,6 +117,17 @@ const CategoryPage: React.FC = () => {
 		}
 	}, [fetchDesigns, clientCategory]);
 
+	// Process designs into simplified structure
+	useEffect(() => {
+		if (Object.keys(designs).length > 0) {
+			const transformed = simplifyDesigns(designs);
+			const deviceDesigns = transformed[currentDevice] || [];
+			
+			// Set the simplified designs for the current device
+			setSimplifiedDesigns(deviceDesigns);
+		}
+	}, [designs, currentDevice]);
+
 	// Clean up selected category on unmount
 	useEffect(() => {
 		return () => {
@@ -137,67 +150,52 @@ const CategoryPage: React.FC = () => {
 			.replace(/-+$/, ''); // Trim - from end of text
 	}
 
-	// Get the appropriate design for the current device type
-	const currentDesigns = designs[currentDevice] || [];
-	const currentDesign = currentDesigns.length > 0 ? currentDesigns[0] : null;
-
 	return (
-		<MainLayout
-			menu={<MenuCategory />}
-			heroContainer={
-				<Hero image={currentDesign?.image || './Home1.jpg'}>
-					{/* Render HTML elements */}
-					{currentDesign?.htmlElements && <HeroElements htmlTags={currentDesign.htmlElements} />}
-				</Hero>
-			}
-			background={
-				<BackgroundTransition backgroundGradient={currentDesign?.backgroundGradient || '#090D23'} />
-			}
-			backgroundTransition={
-				<BlurTransition
-					color={currentDesign?.transitionGradient || '#090D23'}
-					blur={40}
-					className='bottom-0 h-[230px]'
-				/>
-			}
-		>
-			<div className='w-full p-6 md:p-8 lg:p-12 -mt-48 flex flex-col gap-10'>
-				{/* Loading state */}
-				{(loading.fetchCardsByCategory || items.length === 0) && (
-					<div className='flex justify-center'>
-						<div className='animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white'></div>
-					</div>
-				)}
+		<DesignProvider designs={simplifiedDesigns} interval={20000}>
+			<MainLayout
+				menu={<MenuCategory />}
+				heroContainer={<RotatingHero />}
+				background={<RotatingBackground />}
+				backgroundTransition={<RotatingBlurTransition />}
+			>
+				<div className='w-full p-6 md:p-8 lg:p-12 -mt-48 flex flex-col gap-10'>
+					{/* Loading state */}
+					{(loading.fetchCardsByCategory || items.length === 0) && (
+						<div className='flex justify-center'>
+							<div className='animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white'></div>
+						</div>
+					)}
 
-				{/* No content state */}
-				{!loading.fetchCardsByCategory && items.length > 0 && cards.length === 0 && (
-					<div className='text-center text-white'>
-						<h2 className='text-2xl font-bold mb-4'>{clientCategory?.title || deslugify(title || '')}</h2>
-						<p>No content available for this category.</p>
-					</div>
-				)}
+					{/* No content state */}
+					{!loading.fetchCardsByCategory && items.length > 0 && cards.length === 0 && (
+						<div className='text-center text-white'>
+							<h2 className='text-2xl font-bold mb-4'>{clientCategory?.title || deslugify(title || '')}</h2>
+							<p>No content available for this category.</p>
+						</div>
+					)}
 
-				{/* Render cards when available */}
-				{!loading.fetchCardsByCategory && items.length > 0 && cards.length > 0 && (
-					<>
-						{/* Use appropriate container based on category type */}
-						{clientCategory?.hasSquareContent ? (
-							<CreatorsCategoryContainer
-								title={clientCategory.previewTitle || clientCategory?.title || ''}
-								data={mapCardsToCreatorsData(cards)}
-							/>
-						) : (
-							<CategoryContainer
-								title={clientCategory?.previewTitle || clientCategory?.title || ''}
-								cards={cards}
-								squareView={false}
-								isFullPage={true}
-							/>
-						)}
-					</>
-				)}
-			</div>
-		</MainLayout>
+					{/* Render cards when available */}
+					{!loading.fetchCardsByCategory && items.length > 0 && cards.length > 0 && (
+						<>
+							{/* Use appropriate container based on category type */}
+							{clientCategory?.hasSquareContent ? (
+								<CreatorsCategoryContainer
+									title={clientCategory.previewTitle || clientCategory?.title || ''}
+									data={mapCardsToCreatorsData(cards)}
+								/>
+							) : (
+								<CategoryContainer
+									title={clientCategory?.previewTitle || clientCategory?.title || ''}
+									cards={cards}
+									squareView={false}
+									isFullPage={true}
+								/>
+							)}
+						</>
+					)}
+				</div>
+			</MainLayout>
+		</DesignProvider>
 	);
 };
 

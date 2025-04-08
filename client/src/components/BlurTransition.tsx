@@ -17,6 +17,7 @@ const BlurTransition: React.FC<BlurTransitionProps> = ({
       className={cn("mb-[70px] md:mb-0 -ml-[100px] lg:mb-0 w-[160%] md:w-[135%]", className)}
       style={{
         position: 'absolute',
+        marginTop: '-25px',
         background: color,
         filter: `blur(${blur}px)`,
         zIndex: 1
