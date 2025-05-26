@@ -51,7 +51,7 @@ const ToolBar: React.FC<ToolBarProps> = ({
   showPageSize = false,
   pageSize = 20,
   onPageSizeChange,
-  pageSizeOptions = [20, 25, 50, 100]
+  pageSizeOptions = [25, 50, 100]
 }) => {
   const { isDark } = useTheme();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
