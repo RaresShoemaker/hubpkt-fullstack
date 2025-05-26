@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useCategoryDesigns } from '../store/features/categoryDesigns/useCategoryDesigns';
 import { ButtonStyle } from '../components/Hero/HeroButton';
 import GridEditor from '../components/Admin/Category/CategoryDesign/GridEditor';
+import { DeviceSize } from '../store/features/categoryDesigns/categoryDesigns.types';
 import { convertHtmlElementsToButtonElements, createPositionClasses } from '../utils/designElementUtils';
 import BackgroundTransition from '../components/BackgroundTransition';
 import BlurTransition from '../components/BlurTransition';
@@ -37,6 +38,30 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
 	designId
 }) => {
 	const { addHtmlElement, currentDesign, removeHtmlElement } = useCategoryDesigns();
+
+	const [currentDevice, setCurrentDevice] = useState<DeviceSize>(DeviceSize.desktop);
+	
+			// Set device type based on window size
+			useEffect(() => {
+				const handleResize = () => {
+					const width = window.innerWidth;
+					if (width < 768) {
+						setCurrentDevice(DeviceSize.mobile);
+					} else if (width < 1024) {
+						setCurrentDevice(DeviceSize.tablet);
+					} else {
+						setCurrentDevice(DeviceSize.desktop);
+					}
+				};
+		
+				// Initial check
+				handleResize();
+		
+				// Add listener for resize
+				window.addEventListener('resize', handleResize);
+				return () => window.removeEventListener('resize', handleResize);
+			}, []);
+	
 
 	const [buttonElements, setButtonElements] = useState<ButtonElementData[]>([]);
 	const [selectedButtonId, setSelectedButtonId] = useState<string | null>(null);
@@ -139,6 +164,8 @@ const CategoryDesignLayout: React.FC<CategoryDesignLayoutProps> = ({
 								elements={buttonElements}
 								onElementsChange={handleElementsChange}
 								backgroundImage={heroImage}
+								columns={currentDevice === DeviceSize.desktop ? 12 : currentDevice === DeviceSize.mobile ? 5 : 10}
+								rows={6}
 								onSelectElement={(id) => id && setSelectedButtonId(id)}
 								minCellHeight={80}
 								minCellWidth={80}
