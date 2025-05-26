@@ -16,9 +16,13 @@ const MenuCategory: React.FC = () => {
 		getCategories();
 	}, [fetchCategoriesClient]);
 
+//shadow-[0px_0px_20px_3px_rgba(62,74,192,0.24)]
+
 	return (
-		<div className='h-screen lg:max-h-[800px] max-h-[480px] md:hidden lg:w-full rounded-2xl bg-[#1B1B1B] px-4 py-6 lg:flex flex-col justify-between hidden shadow-[0_0_40px_0_rgba(62,74,192,0.24)]'>
-			<div className='flex flex-col gap-4 align-middle'>
+		<div className=' lg:max-h-[800px] max-h-[480px] md:hidden lg:w-full rounded-2xl bg-[#1B1B1B] px-4 py-6 lg:flex flex-col justify-between hidden
+		shadow-[0px_0px_20px_3px_rgba(22,74,192,0.20)]
+		'>
+			<div className='flex flex-col align-middle gap-1'>
 				{/* Home button */}
 				<MenuButton predefined='home' />
 				
@@ -47,7 +51,7 @@ const MenuCategory: React.FC = () => {
 			</div>
 			
 			{/* Footer section */}
-			<div className='mt-auto flex flex-col gap-4'>
+			<div className='flex flex-col gap-4 mt-[30px]'>
 				<LogoNavigation />
 				<div className='flex gap-4 mt-4 h-10 mx-auto justify-center items-center'>
 					<div className='hover:cursor-pointer flex justify-center items-center'>
