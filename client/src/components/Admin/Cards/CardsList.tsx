@@ -95,7 +95,7 @@ const CardList: React.FC<CardListProps> = ({ cards, isLoading }) => {
         isOpen={isModalOpen}
         onClose={closeModal}
         title={useCards().currentCard ? 'Edit Card' : 'Create New Card'}
-        maxWidth="lg"
+        maxWidth="2xl"
       >
         <CardForm onClose={closeModal} />
       </ModalPortal>

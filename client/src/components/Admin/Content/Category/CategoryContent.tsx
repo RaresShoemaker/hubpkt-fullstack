@@ -39,16 +39,16 @@ const CategoryContent: React.FC<CategoryContentProps> = () => {
   const [filters, setFilters] = useState<CardFilters>({});
   
   // Pagination state
-  const ITEMS_PER_PAGE = 20;
+  const [itemsPerPage, setItemsPerPage] = useState(20);
   const [currentPage, setCurrentPage] = useState(1);
   
   // Search debounce
   const searchDebounceRef = useRef<NodeJS.Timeout | null>(null);
   
   // Calculate total pages
-  const totalPages = Math.max(1, Math.ceil(total / ITEMS_PER_PAGE));
+  const totalPages = Math.max(1, Math.ceil(total / itemsPerPage));
   
-  // Fetch cards when category, page, or filtering changes
+  // Fetch cards when category, page, page size, or filtering changes
   useEffect(() => {
     if (!currentCategory?.id) return;
     
@@ -57,8 +57,8 @@ const CategoryContent: React.FC<CategoryContentProps> = () => {
         // Always use the filtered endpoint to ensure pagination works consistently
         // This provides the most flexibility
         await handleFetchFilteredCards({
-          skip: (currentPage - 1) * ITEMS_PER_PAGE,
-          take: ITEMS_PER_PAGE,
+          skip: (currentPage - 1) * itemsPerPage,
+          take: itemsPerPage,
           categoryId: currentCategory.id,
           // Include any active filters
           ...filters
@@ -69,7 +69,7 @@ const CategoryContent: React.FC<CategoryContentProps> = () => {
     };
     
     fetchCards();
-  }, [currentCategory, currentPage, filters, handleFetchFilteredCards, ITEMS_PER_PAGE]);
+  }, [currentCategory, currentPage, itemsPerPage, filters, handleFetchFilteredCards]);
   
   // Reset to page 1 when category changes
   useEffect(() => {
@@ -129,6 +129,13 @@ const CategoryContent: React.FC<CategoryContentProps> = () => {
     setFilters(cleanedFilters);
   };
   
+  // Handle page size change
+  const handlePageSizeChange = (newSize: number) => {
+    setItemsPerPage(newSize);
+    // Reset to page 1 when page size changes
+    setCurrentPage(1);
+  };
+  
   // Handle page change
   const handlePageChange = (newPage: number) => {
     if (newPage >= 1 && newPage <= totalPages) {
@@ -179,6 +186,10 @@ const CategoryContent: React.FC<CategoryContentProps> = () => {
             showFilter={true}
             filters={filters}
             onFilterChange={handleFilterChange}
+            showPageSize={true}
+            pageSize={itemsPerPage}
+            onPageSizeChange={handlePageSizeChange}
+            pageSizeOptions={[25, 50, 100]}
           />
         )}
       </div>
@@ -280,10 +291,20 @@ const CategoryContent: React.FC<CategoryContentProps> = () => {
             </div>
           )}
           
+          {/* Items per page info */}
+          {total > 0 && (
+            <div className={cn(
+              "flex justify-center mt-4 text-sm",
+              isDark ? "text-dark-text-secondary" : "text-light-text-secondary"
+            )}>
+              Showing {Math.min((currentPage - 1) * itemsPerPage + 1, total)} to {Math.min(currentPage * itemsPerPage, total)} of {total} items
+            </div>
+          )}
+          
           {/* Debug info */}
           {process.env.NODE_ENV === 'development' && (
             <div className="text-xs mt-4 text-gray-500 text-center">
-              Debug: Total items: {total} | Page {currentPage} of {totalPages} | Cards shown: {cards.length} | Filters: {JSON.stringify(filters)}
+              Debug: Total items: {total} | Page {currentPage} of {totalPages} | Items per page: {itemsPerPage} | Cards shown: {cards.length} | Filters: {JSON.stringify(filters)}
             </div>
           )}
         </>

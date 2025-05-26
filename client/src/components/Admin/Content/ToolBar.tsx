@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import ButtonBase from '../Buttons/ButtonBase';
-import { ArrowLeftRight, SaveIcon, Search, Filter, X, Check } from 'lucide-react';
+import { ArrowLeftRight, SaveIcon, Search, Filter, X, Check, ChevronDown } from 'lucide-react';
 import { cn } from '../../../lib/utils';
 import { useTheme } from '../../../store/features/ui/useUITheme';
 
@@ -27,6 +27,11 @@ interface ToolBarProps {
     isDiscover?: boolean;
     isPreview?: boolean;
   }) => void;
+  // Page size functionality
+  showPageSize?: boolean;
+  pageSize?: number;
+  onPageSizeChange?: (size: number) => void;
+  pageSizeOptions?: number[];
 }
 
 const ToolBar: React.FC<ToolBarProps> = ({
@@ -41,10 +46,16 @@ const ToolBar: React.FC<ToolBarProps> = ({
   // Filter props
   showFilter = false,
   filters = {},
-  onFilterChange
+  onFilterChange,
+  // Page size props
+  showPageSize = false,
+  pageSize = 20,
+  onPageSizeChange,
+  pageSizeOptions = [20, 25, 50, 100]
 }) => {
   const { isDark } = useTheme();
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isPageSizeOpen, setIsPageSizeOpen] = useState(false);
   
   // Count active filters
   const activeFilterCount = Object.values(filters).filter(Boolean).length;
@@ -72,6 +83,12 @@ const ToolBar: React.FC<ToolBarProps> = ({
 
   const toggleFilterPanel = () => {
     setIsFilterOpen(!isFilterOpen);
+    if (isPageSizeOpen) setIsPageSizeOpen(false);
+  };
+
+  const togglePageSizePanel = () => {
+    setIsPageSizeOpen(!isPageSizeOpen);
+    if (isFilterOpen) setIsFilterOpen(false);
   };
 
   const clearAllFilters = () => {
@@ -83,6 +100,13 @@ const ToolBar: React.FC<ToolBarProps> = ({
         isPreview: undefined
       });
     }
+  };
+
+  const handlePageSizeSelect = (size: number) => {
+    if (onPageSizeChange) {
+      onPageSizeChange(size);
+    }
+    setIsPageSizeOpen(false);
   };
 
   return (
@@ -137,6 +161,54 @@ const ToolBar: React.FC<ToolBarProps> = ({
             >
               <X size={16} className={isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'} />
             </button>
+          )}
+        </div>
+      )}
+
+      {/* Page Size Selector */}
+      {showPageSize && (
+        <div className="relative">
+          <ButtonBase
+            onClick={togglePageSizePanel}
+            variant='ghost'
+            className="flex items-center gap-2"
+          >
+            <span className={cn(
+              'text-sm',
+              isDark ? 'text-dark-text-primary' : 'text-light-text-primary'
+            )}>
+              {pageSize} per page
+            </span>
+            <ChevronDown size={16} className={cn(
+              'transition-transform',
+              isPageSizeOpen && 'rotate-180',
+              isDark ? 'text-dark-text-secondary' : 'text-light-text-secondary'
+            )} />
+          </ButtonBase>
+
+          {/* Page size dropdown */}
+          {isPageSizeOpen && (
+            <div className={cn(
+              'absolute top-full right-0 mt-2 w-32 rounded-lg shadow-lg z-50',
+              isDark ? 'bg-dark-surface border border-dark-border' : 'bg-light-surface border border-light-border'
+            )}>
+              <div className="py-1">
+                {pageSizeOptions.map((size) => (
+                  <button
+                    key={size}
+                    onClick={() => handlePageSizeSelect(size)}
+                    className={cn(
+                      'w-full px-3 py-2 text-left text-sm transition-colors',
+                      pageSize === size 
+                        ? (isDark ? 'bg-dark-background text-dark-text-accent' : 'bg-light-background text-light-text-accent')
+                        : (isDark ? 'text-dark-text-primary hover:bg-dark-background' : 'text-light-text-primary hover:bg-light-background')
+                    )}
+                  >
+                    {size} per page
+                  </button>
+                ))}
+              </div>
+            </div>
           )}
         </div>
       )}
