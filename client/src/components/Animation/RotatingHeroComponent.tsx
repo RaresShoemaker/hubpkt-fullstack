@@ -1,3 +1,5 @@
+"use client"
+
 import React, { useEffect } from 'react';
 import Hero from '../Hero/Hero';
 import HeroElements from '../Hero/HeroElements';
