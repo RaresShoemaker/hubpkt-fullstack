@@ -1,6 +1,6 @@
 import React from 'react';
 import BlurTransition from '../BlurTransition';
-import { useDesignRotation } from '../../context/AnimationContext/DesignRotationCotext';
+import { useDesignRotation } from '../../context/AnimationContext/DesignRotationContext';
 
 interface RotatingBlurTransitionProps {
   className?: string;
@@ -11,24 +11,30 @@ const RotatingBlurTransition: React.FC<RotatingBlurTransitionProps> = ({
   className = 'h-[230px]',
   blur = 40
 }) => {
-  const { currentDesign, isTransitioning } = useDesignRotation();
+  const { currentIndex, designs } = useDesignRotation();
 
-  if (!currentDesign) {
+  if (designs.length === 0) {
     return <BlurTransition color="#090D23" blur={blur} className={className} />;
   }
 
   return (
     <div className="relative w-full">
-      <div 
-        className="w-full transition-opacity duration-1000"
-        style={{ opacity: isTransitioning ? 0 : 1 }}
-      >
-        <BlurTransition 
-          color={currentDesign.transitionGradient} 
-          blur={blur}
-          className={className}
-        />
-      </div>
+      {designs.map((design, index) => (
+        <div
+          key={index}
+          className="absolute inset-0 w-full transition-opacity duration-1000"
+          style={{
+            opacity: index === currentIndex ? 1 : 0,
+            zIndex: index === currentIndex ? 1 : 0
+          }}
+        >
+          <BlurTransition 
+            color={design.transitionGradient} 
+            blur={blur}
+            className={className}
+          />
+        </div>
+      ))}
     </div>
   );
 };

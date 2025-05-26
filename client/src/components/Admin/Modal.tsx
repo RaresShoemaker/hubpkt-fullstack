@@ -79,7 +79,7 @@ const ModalPortal: React.FC<ModalPortalProps> = ({
     >
       <div
         className={cn(
-          "w-full relative rounded-lg shadow-xl transition-all",
+          "w-full max-h-full overflow-y-auto p-10 relative rounded-lg shadow-xl transition-all",
           getMaxWidthClass(),
           isDark 
             ? "bg-dark-background border border-dark-border/30" 

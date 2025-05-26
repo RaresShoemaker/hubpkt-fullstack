@@ -21,7 +21,7 @@ const ButtonHero: React.FC<ButtonHeroProps> = ({
   // Style mappings
   const styleClasses: Record<ButtonStyle, string> = {
     primary: 'rounded-full bg-primary text-white font-medium w-full h-12',
-    secondary: 'bg-transparent border-2 border-white text-white font-bold py-3 px-6 rounded-full hover:bg-white hover:text-purple-600 transition duration-300 w-full',
+    secondary: 'bg-transparent border-2 border-white text-white font-bold py-3 px-6 rounded-full hover:bg-white hover:text-primary transition duration-300 w-full',
   };
 
   const buttonElement = (

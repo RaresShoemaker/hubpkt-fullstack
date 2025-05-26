@@ -21,7 +21,7 @@ export const CategoryIcon: React.FC<CategoryIconProps> = ({
       case 'sm':
         return 'w-7 h-7';
       case 'md':
-        return 'w-10 h-10';
+        return 'w-9 h-9';
       case 'lg':
         return 'w-14 h-14';
       case 'custom':

@@ -10,7 +10,7 @@ import { Card } from '../store/features/cards/cards.types';
 import { useParams, useLocation } from 'react-router-dom';
 import { DeviceSize } from '../store/features/categoryDesigns/categoryDesigns.types';
 import { simplifyDesigns, SimplifiedDesign } from '../utils/designTransformer';
-import { DesignProvider } from '../context/AnimationContext/DesignRotationCotext';
+import { DesignProvider } from '../context/AnimationContext/DesignRotationContext';
 import RotatingBackground from '../components/Animation/RotatingBackgroundComponent';
 import RotatingBlurTransition from '../components/Animation/RotatingBlurTransition';
 import RotatingHero from '../components/Animation/RotatingHeroComponent';
