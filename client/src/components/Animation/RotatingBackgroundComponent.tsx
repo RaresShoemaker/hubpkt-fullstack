@@ -1,6 +1,6 @@
 import React from 'react';
 import BackgroundTransition from '../BackgroundTransition';
-import { useDesignRotation } from '../../context/AnimationContext/DesignRotationCotext';
+import { useDesignRotation } from '../../context/AnimationContext/DesignRotationContext';
 
 const RotatingBackground: React.FC = () => {
   const { currentDesign, isTransitioning } = useDesignRotation();

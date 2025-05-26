@@ -1,6 +1,6 @@
 import React from 'react';
 import BlurTransition from '../BlurTransition';
-import { useDesignRotation } from '../../context/AnimationContext/DesignRotationCotext';
+import { useDesignRotation } from '../../context/AnimationContext/DesignRotationContext';
 
 interface RotatingBlurTransitionProps {
   className?: string;

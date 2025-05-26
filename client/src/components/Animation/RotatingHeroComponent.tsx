@@ -1,7 +1,7 @@
 import React from 'react';
 import Hero from '../Hero/Hero';
 import HeroElements from '../Hero/HeroElements';
-import { useDesignRotation } from '../../context/AnimationContext/DesignRotationCotext';
+import { useDesignRotation } from '../../context/AnimationContext/DesignRotationContext';
 
 const RotatingHero: React.FC = () => {
   const { currentDesign, isTransitioning } = useDesignRotation();
