@@ -37,8 +37,6 @@ interface HeroElementsProps {
 // Main HeroElements component focused solely on buttons
 const HeroElements: React.FC<HeroElementsProps> = ({ htmlTags }) => {
 
-	
-
 	const getElementStyle = (position: any) => {
     return {
       gridColumnStart: position.colStart,

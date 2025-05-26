@@ -39,7 +39,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({
         <div className='flex flex-col flex-grow z-10 overflow-x-hidden'>
           {/* Hero Container (fixed height) */}
           {heroContainer && (
-            <div className='w-full z-[5] h-[70vh] md:h-[52vh] pt-16 lg:pt-0'>
+            <div className='w-full z-[5] h-[70vh] md:h-[52vh] md:pt-16 lg:pt-0'>
               {heroContainer}
             </div>
           )}

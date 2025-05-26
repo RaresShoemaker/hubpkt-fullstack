@@ -3,10 +3,11 @@ import { createPortal } from 'react-dom';
 import { Link } from 'react-router-dom';
 import { Menu, X } from 'lucide-react';
 import { useCategories } from '../../store/features/categories/useCategories';
+import MenuButton from './MenuButtons';
 
 const MobileMenu = () => {
 	const [isOpen, setIsOpen] = useState(false);
-	const { items, changeClientCategory } = useCategories();
+	const { items } = useCategories();
 
 	// Lock body scroll when menu is open
 	useEffect(() => {
@@ -23,16 +24,16 @@ const MobileMenu = () => {
 	// Helper function to generate a URL-friendly slug
 	const slugify = (text: string): string => {
 		if (!text) return '';
-		
+
 		return text
 			.toString()
 			.toLowerCase()
 			.trim()
-			.replace(/\s+/g, '-')      // Replace spaces with -
-			.replace(/[^\w-]+/g, '')   // Remove all non-word chars
-			.replace(/--+/g, '-')      // Replace multiple - with single -
-			.replace(/^-+/, '')        // Trim - from start of text
-			.replace(/-+$/, '');       // Trim - from end of text
+			.replace(/\s+/g, '-') // Replace spaces with -
+			.replace(/[^\w-]+/g, '') // Remove all non-word chars
+			.replace(/--+/g, '-') // Replace multiple - with single -
+			.replace(/^-+/, '') // Trim - from start of text
+			.replace(/-+$/, ''); // Trim - from end of text
 	};
 
 	const MenuContent = () => (
@@ -50,21 +51,12 @@ const MobileMenu = () => {
 
 				<div className='flex-1 flex flex-col gap-3 p-4'>
 					{/* Home Button */}
-					<Link 
-						to="/" 
-						onClick={() => {
-							setIsOpen(false);
-							changeClientCategory(null);
-						}}
-						className='flex items-center p-2 gap-2 text-white hover:bg-white/10 rounded-lg'
-					>
-						<span>Packet Hub</span>
-					</Link>
+					<MenuButton predefined='home' />
 
 					{/* Categories */}
 					{items.map((category) => {
 						let categoryLink;
-						
+
 						// Check if this is the Creator Hub item
 						if (category.title.toLowerCase().includes('creator')) {
 							categoryLink = '/creatorshub';
@@ -73,17 +65,11 @@ const MobileMenu = () => {
 						}
 
 						return (
-							<Link
+							<MenuButton
 								key={category.id}
-								to={categoryLink}
-								onClick={() => {
-									setIsOpen(false);
-									changeClientCategory(category);
-								}}
-								className='flex items-center p-2 gap-2 text-white hover:bg-white/10 rounded-lg'
-							>
-								<span>{category.title}</span>
-							</Link>
+								category={category}
+								link={categoryLink}
+							/>
 						);
 					})}
 				</div>

@@ -22,7 +22,9 @@ const NavbarMobile: React.FC = () => {
     // Hide navbar when scrolling down past threshold
     if (currentScrollY > lastScrollY && currentScrollY > 50) {
       setVisible(false);
-    } else {
+    } 
+    // Show navbar when scrolling up OR when near the top
+    else if (currentScrollY < lastScrollY || currentScrollY <= 50) {
       setVisible(true);
     }
     
@@ -31,21 +33,22 @@ const NavbarMobile: React.FC = () => {
   }, [lastScrollY]);
 
   useEffect(() => {
-    // Use throttle instead of debounce for smoother scroll response
-    const throttledScrollHandler = _.throttle(() => {
-      controlNavbar();
-    }, 150);
+    // Use debounce with leading/trailing for better responsiveness
+    const debouncedScrollHandler = _.debounce(controlNavbar, 100, {
+      leading: true,
+      trailing: true
+    });
     
-    window.addEventListener('scroll', throttledScrollHandler);
-    window.addEventListener('resize', throttledScrollHandler);
+    window.addEventListener('scroll', debouncedScrollHandler, { passive: true });
+    window.addEventListener('resize', debouncedScrollHandler);
     
     // Initial check
     controlNavbar();
     
     return () => {
-      window.removeEventListener('scroll', throttledScrollHandler);
-      window.removeEventListener('resize', throttledScrollHandler);
-      throttledScrollHandler.cancel();
+      window.removeEventListener('scroll', debouncedScrollHandler);
+      window.removeEventListener('resize', debouncedScrollHandler);
+      debouncedScrollHandler.cancel();
     };
   }, [controlNavbar]);
 
@@ -53,7 +56,7 @@ const NavbarMobile: React.FC = () => {
     <div 
       className={cn(
         'fixed top-0 left-0 right-0 flex w-full justify-between items-center px-2 h-16',
-        'bg-white/90 backdrop-blur-sm shadow-sm',
+        // 'bg-white/90 backdrop-blur-sm shadow-sm', // Added background and shadow
         'transition-transform duration-300 ease-in-out z-50',
         'lg:hidden', // Only display on mobile and tablet, hide on desktop
         visible ? 'translate-y-0' : '-translate-y-full'
