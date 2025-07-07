@@ -2,19 +2,14 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../db/prisma-client';
 import { StatusCodes } from 'http-status-codes';
 import ApiError from '../utils/ApiError';
-import { UploadMediaTypes } from '../types';
-import { createImageMetadata, updateImageMetadata } from './imageMetadata.service';
 import { CategoryTypes } from '../types';
+import { uploadFile, deleteFile, deleteCategoryFolder, renameCategoryFolder, FileUploadType } from './uploadMedia.service';
+import sharp from 'sharp';
+import path from 'path';
 
 export async function createCategory(data: CategoryTypes.CreateCategoryInput, imageBuffer: Buffer, fileName: string) {
 	try {
-		// Create image metadata and upload image
-		const { imageMetadata, url } = await createImageMetadata(imageBuffer, fileName, {
-			bucketName: UploadMediaTypes.UploadMediaBucket.MAIN_BUCKET,
-			folder: UploadMediaTypes.UploadMediaFolders.CATEGORIES
-		});
-
-		// Create category with image metadata
+		// Create category first to get the ID for folder structure
 		const category = await prisma.category.create({
 			data: {
 				title: data.title,
@@ -23,24 +18,95 @@ export async function createCategory(data: CategoryTypes.CreateCategoryInput, im
 				previewTitle: data.previewTitle,
 				hasSquareContent: data.hasSquareContent,
 				order: data.order,
-				image: url,
-				imageMetadata: {
-					connect: {
-						id: imageMetadata.id
-					}
-				},
+				image: '', // Will update after image upload
 				createdBy: {
 					connect: {
 						id: data.userId
 					}
 				}
-			},
-			include: {
-				imageMetadata: true
 			}
 		});
 
-		return category;
+		try {
+			// Determine file type and processing method
+			const fileExtension = path.extname(fileName).toLowerCase();
+			const isSvg = fileExtension === '.svg';
+			
+			let processedBuffer: Buffer;
+			let finalContentType: string;
+			let imageMetadata: any = {};
+
+			if (isSvg) {
+				// For SVG files, don't process with Sharp
+				processedBuffer = imageBuffer;
+				finalContentType = 'image/svg+xml';
+				
+				// SVG files don't have fixed dimensions
+				imageMetadata = {
+					width: 0,
+					height: 0
+				};
+			} else {
+				// For other image types, process with Sharp
+				processedBuffer = await sharp(imageBuffer)
+					.resize(300, 300, { fit: 'cover', withoutEnlargement: true })
+					.jpeg({ quality: 85 })
+					.toBuffer();
+				
+				finalContentType = 'image/jpeg';
+				
+				// Get processed image metadata
+				imageMetadata = await sharp(processedBuffer).metadata();
+			}
+
+			// Upload to filesystem with category-specific folder structure
+			const uploadResult = await uploadFile(
+				processedBuffer,
+				fileName,
+				finalContentType,
+				{
+					categoryId: category.id,
+					uploadType: FileUploadType.CATEGORY_ICON
+				},
+				category.title
+			);
+
+			// Create image metadata record with correct MIME type
+			const imageMetadataRecord = await prisma.imageMetadata.create({
+				data: {
+					width: imageMetadata.width || 0,
+					height: imageMetadata.height || 0,
+					size: uploadResult.fileSize,
+					mimeType: finalContentType,
+					url: uploadResult.url,
+					filePath: uploadResult.filePath,
+					fileName: fileName
+				}
+			});
+
+			// Update category with image URL and metadata
+			const updatedCategory = await prisma.category.update({
+				where: { id: category.id },
+				data: {
+					image: uploadResult.url,
+					imageMetadata: {
+						connect: {
+							id: imageMetadataRecord.id
+						}
+					}
+				},
+				include: {
+					imageMetadata: true
+				}
+			});
+
+			return updatedCategory;
+		} catch (error) {
+			// If image upload fails, delete the created category
+			await prisma.category.delete({ where: { id: category.id } });
+			console.error('Error processing category icon:', error);
+			throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Failed to process category icon');
+		}
 	} catch (error) {
 		if (error instanceof ApiError) throw error;
 		throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, `Failed to create category: ${error.message}`);
@@ -68,27 +134,83 @@ export async function updateCategory(
 				throw new ApiError(StatusCodes.NOT_FOUND, 'Category not found');
 			}
 
+			// Delete old image if exists
 			if (category.imageMetadata) {
-				// Update existing image metadata
-				const { imageMetadata: newMetadata, url } = await updateImageMetadata(
-					category.imageMetadata.id,
-					imageBuffer,
-					fileName,
-					{
-						bucketName: UploadMediaTypes.UploadMediaBucket.MAIN_BUCKET,
-						folder: UploadMediaTypes.UploadMediaFolders.CATEGORIES
-					}
-				);
-				imageMetadata = newMetadata;
-				imageUrl = url;
-			} else {
-				// Create new image metadata
-				const { imageMetadata: newMetadata, url } = await createImageMetadata(imageBuffer, fileName, {
-					bucketName: UploadMediaTypes.UploadMediaBucket.MAIN_BUCKET,
-					folder: UploadMediaTypes.UploadMediaFolders.CATEGORIES
+				await deleteFile(category.imageMetadata.filePath);
+				await prisma.imageMetadata.delete({
+					where: { id: category.imageMetadata.id }
 				});
-				imageMetadata = newMetadata;
-				imageUrl = url;
+			}
+
+			// Determine file type and processing method
+			const fileExtension = path.extname(fileName).toLowerCase();
+			const isSvg = fileExtension === '.svg';
+			
+			let processedBuffer: Buffer;
+			let finalContentType: string;
+			let imageMetadataInfo: any = {};
+
+			if (isSvg) {
+				// For SVG files, don't process with Sharp
+				processedBuffer = imageBuffer;
+				finalContentType = 'image/svg+xml';
+				
+				// SVG files don't have fixed dimensions
+				imageMetadataInfo = {
+					width: 0,
+					height: 0
+				};
+			} else {
+				// For other image types, process with Sharp
+				processedBuffer = await sharp(imageBuffer)
+					.resize(300, 300, { fit: 'cover', withoutEnlargement: true })
+					.jpeg({ quality: 85 })
+					.toBuffer();
+				
+				finalContentType = 'image/jpeg';
+				
+				// Get processed image metadata
+				imageMetadataInfo = await sharp(processedBuffer).metadata();
+			}
+
+			// Extract the new title as a string for folder operations
+			const newTitle = typeof data.title === 'string' ? data.title : category.title;
+
+			// Upload new image with updated category structure
+			const uploadResult = await uploadFile(
+				processedBuffer,
+				fileName,
+				finalContentType,
+				{
+					categoryId: id,
+					uploadType: FileUploadType.CATEGORY_ICON
+				},
+				newTitle
+			);
+
+			// Create new image metadata with correct MIME type
+			imageMetadata = await prisma.imageMetadata.create({
+				data: {
+					width: imageMetadataInfo.width || 0,
+					height: imageMetadataInfo.height || 0,
+					size: uploadResult.fileSize,
+					mimeType: finalContentType,
+					url: uploadResult.url,
+					filePath: uploadResult.filePath,
+					fileName: fileName
+				}
+			});
+
+			imageUrl = uploadResult.url;
+
+			// Rename category folder if title changed
+			if (data.title && typeof data.title === 'string' && data.title !== category.title) {
+				try {
+					await renameCategoryFolder(id, category.title, data.title);
+				} catch (error) {
+					console.warn('Failed to rename category folder:', error);
+					// Continue with update even if folder rename fails
+				}
 			}
 		}
 
@@ -234,6 +356,12 @@ export async function deleteCategory(id: string) {
 			where: { id },
 			include: {
 				imageMetadata: true,
+				cards: {
+					include: { imageMetadata: true }
+				},
+				designElements: {
+					include: { imageMetadata: true }
+				}
 			}
 		});
 
@@ -243,43 +371,57 @@ export async function deleteCategory(id: string) {
 
 		// Start a transaction to ensure all related deletions are atomic
 		await prisma.$transaction(async (prismaClient) => {
-			// 1. Delete CategoryDesign related data if it exists
-
-			// 2. Delete all associated cards
-			const cards = await prismaClient.card.findMany({
-				where: { categoryId: id },
-				include: {
-					imageMetadata: true
-				}
-			});
-
-			// Delete each card and its associated image metadata
-			for (const card of cards) {
-				// Delete card's image metadata if it exists
+			// Delete all associated cards and their image metadata
+			for (const card of category.cards) {
 				if (card.imageMetadata) {
+					await deleteFile(card.imageMetadata.filePath);
 					await prismaClient.imageMetadata.delete({
 						where: { id: card.imageMetadata.id }
 					});
 				}
-				
-				// Delete the card
 				await prismaClient.card.delete({
 					where: { id: card.id }
 				});
 			}
+
+			// Delete all design elements and their image metadata
+			for (const designElement of category.designElements) {
+				if (designElement.imageMetadata) {
+					await deleteFile(designElement.imageMetadata.filePath);
+					await prismaClient.imageMetadata.delete({
+						where: { id: designElement.imageMetadata.id }
+					});
+				}
+				// Delete associated HTML elements
+				await prismaClient.htmlElement.deleteMany({
+					where: { designElementId: designElement.id }
+				});
+				await prismaClient.designElement.delete({
+					where: { id: designElement.id }
+				});
+			}
 			
-			// 3. Delete the category's image metadata if it exists
+			// Delete the category's image metadata if it exists
 			if (category.imageMetadata) {
+				await deleteFile(category.imageMetadata.filePath);
 				await prismaClient.imageMetadata.delete({
 					where: { id: category.imageMetadata.id }
 				});
 			}
 			
-			// 4. Finally delete the category
+			// Finally delete the category
 			await prismaClient.category.delete({
 				where: { id }
 			});
 		});
+
+		// Delete entire category folder from filesystem
+		try {
+			await deleteCategoryFolder(id, category.title);
+		} catch (error) {
+			console.warn('Failed to delete category folder:', error);
+			// Continue even if folder deletion fails
+		}
 
 		return true;
 	} catch (error) {

@@ -17,6 +17,8 @@ import RotatingHero from '../components/Animation/RotatingHeroComponent';
 
 // Helper function to convert Card[] to CreatorsData[]
 const mapCardsToCreatorsData = (cards: Card[]) => {
+	console.log(cards)
+
 	return cards.map((card) => ({
 		id: card.id,
 		title: card.title,

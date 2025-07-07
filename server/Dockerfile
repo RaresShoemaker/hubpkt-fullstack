@@ -12,3 +12,4 @@ RUN npm install
 COPY tsconfig*.json ./
 
 EXPOSE 4001
+EXPOSE 9229

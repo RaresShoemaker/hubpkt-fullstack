@@ -72,15 +72,19 @@ model Card {
 }
 
 model ImageMetadata {
-  id        String    @id @default(uuid())
-  width     Int
-  height    Int
-  size      Int       // Size in KB
-  mimeType  String
-  url       String
-  category  Category?
-  card      Card?
+  id          String    @id @default(uuid())
+  width       Int
+  height      Int
+  size        Int       // Size in bytes
+  mimeType    String
+  url         String    // Public URL for accessing the file
+  filePath    String    // Relative file path from storage base (key)
+  fileName    String    // Original filename
+  category    Category?
+  card        Card?
   designElement DesignElement?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   @@map("image_metadata")
 }
