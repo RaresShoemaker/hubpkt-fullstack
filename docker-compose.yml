@@ -23,14 +23,34 @@ services:
     environment:
       - NODE_ENV=development
       - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/hubpkt
+      - STORAGE_BASE_PATH=/app/uploads
+      - NGINX_BASE_URL=http://localhost:8080
     volumes:
       - ./server:/usr/src/app
       - /usr/src/app/node_modules
+      # Mount uploads directory for persistent file storage
+      - uploads-data:/app/uploads
     depends_on:
       - postgres
     networks:
       - app-network
     command: sh -c "npm run prisma:generate && npm run prisma:migrate:deploy && npm run dev"
+
+  # nginx service for serving static files
+  nginx:
+    image: nginx:alpine
+    container_name: hubpkt-nginx
+    ports:
+      - "8080:80"
+    volumes:
+      # Mount the same uploads volume to serve files
+      - uploads-data:/usr/share/nginx/html
+      # Mount custom nginx config
+      - ./nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - server
+    networks:
+      - app-network
 
   client:
     build:
@@ -70,3 +90,4 @@ networks:
 volumes:
   postgres-data:
   pgadmin-data:
+  uploads-data:  # New volume for persistent file storage

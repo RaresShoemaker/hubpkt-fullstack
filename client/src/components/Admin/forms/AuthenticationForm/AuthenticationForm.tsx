@@ -1,6 +1,6 @@
 import React from 'react';
 import { emailValidator, 
-	// nameValidator, passwordValidator 
+	nameValidator, passwordValidator
 } from '../validations/auth.validation';
 import CustomInput from '../../Input';
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react';
@@ -9,7 +9,7 @@ import useAuthenticationForm from './useAuthForm';
 
 const AuthenticationForm: React.FC = () => {
 	const { state, dispatch, handleSubmit, 
-		// confirmPasswordValidator 
+		confirmPasswordValidator 
 	} = useAuthenticationForm();
 
 	return (
@@ -35,7 +35,6 @@ const AuthenticationForm: React.FC = () => {
 						Login
 					</Tab>
 					<Tab
-						disabled
 						className={({ selected }) =>
 							clsx(
 								'w-full rounded-lg py-2.5 text-sm font-medium leading-5',
@@ -88,7 +87,7 @@ const AuthenticationForm: React.FC = () => {
 						</form>
 					</TabPanel>
 
-					{/* <TabPanel>
+					<TabPanel>
 						<form onSubmit={handleSubmit} className='space-y-6'>
             <CustomInput
 								label='Name'
@@ -157,7 +156,7 @@ const AuthenticationForm: React.FC = () => {
 								</button>
 							</div>
 						</form>
-					</TabPanel> */}
+					</TabPanel>
 				</TabPanels>
 			</TabGroup>
 		</div>

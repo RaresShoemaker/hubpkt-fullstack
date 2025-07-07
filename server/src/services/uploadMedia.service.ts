@@ -1,15 +1,32 @@
-import { PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
-import { s3Client } from '../config/s3Client';
-import { UploadMediaTypes } from '../types';
+import fs from 'fs/promises';
+import path from 'path';
+import { v4 as uuidv4 } from 'uuid';
 import { config } from '../config/environment';
 import ApiError from '../utils/ApiError';
 import { StatusCodes } from 'http-status-codes';
+import sharp from 'sharp';
 
-// Your R2 public URL from Cloudflare dashboard
-const R2_PUBLIC_URL = config.R2_PUBLIC_URL;
+// Base URL for nginx-served files
+const NGINX_BASE_URL = config.NGINX_BASE_URL || 'https://yourdomain.com';
 
-if (!R2_PUBLIC_URL) {
-	throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Missing R2_PUBLIC_URL environment variable');
+// Base directory for file storage (should match Docker volume mount)
+const STORAGE_BASE_PATH = config.STORAGE_BASE_PATH || '/app/uploads';
+
+if (!NGINX_BASE_URL) {
+	throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Missing NGINX_BASE_URL environment variable');
+}
+
+// File type definitions for different upload types
+export enum FileUploadType {
+	CATEGORY_ICON = 'category_icon',
+	CARD_IMAGE = 'card_image',
+	DESIGN_ELEMENT = 'design_element'
+}
+
+export interface UploadOptions {
+	categoryId: string;
+	uploadType: FileUploadType;
+	deviceSize?: 'mobile' | 'tablet' | 'desktop'; // For design elements
 }
 
 function sanitizeFileName(fileName: string): string {
@@ -24,38 +41,147 @@ function sanitizeFileName(fileName: string): string {
 	);
 }
 
+function sanitizeFolderName(name: string): string {
+	return name
+		.replace(/\s+/g, '-')
+		.replace(/[^a-zA-Z0-9-_]/g, '')
+		.toLowerCase();
+}
+
+async function ensureDirectoryExists(dirPath: string): Promise<void> {
+	try {
+		await fs.access(dirPath);
+	} catch (error) {
+		// Directory doesn't exist, create it recursively
+		await fs.mkdir(dirPath, { recursive: true });
+	}
+}
+
+
+
+/**
+ * Generate the folder structure based on upload type and category
+ */
+function generateFolderPath(options: UploadOptions, categoryTitle?: string): string {
+	const sanitizedCategoryId = options.categoryId;
+	const sanitizedCategoryTitle = categoryTitle ? sanitizeFolderName(categoryTitle) : 'category';
+	const categoryFolder = `${sanitizedCategoryId}-${sanitizedCategoryTitle}`;
+
+	switch (options.uploadType) {
+		case FileUploadType.CATEGORY_ICON:
+			return `categories/${categoryFolder}/icon`;
+		
+		case FileUploadType.CARD_IMAGE:
+			return `categories/${categoryFolder}/cards`;
+		
+		case FileUploadType.DESIGN_ELEMENT:
+			if (!options.deviceSize) {
+				throw new ApiError(StatusCodes.BAD_REQUEST, 'Device size required for design elements');
+			}
+			return `categories/${categoryFolder}/design/${options.deviceSize}`;
+		
+		default:
+			throw new ApiError(StatusCodes.BAD_REQUEST, 'Invalid upload type');
+	}
+}
+
+// Add this helper function to determine file type and processing
+function getFileTypeInfo(fileName: string, originalContentType: string): {
+  isSvg: boolean;
+  finalContentType: string;
+  extension: string;
+} {
+  const extension = path.extname(fileName).toLowerCase();
+  const isSvg = extension === '.svg' || originalContentType === 'image/svg+xml';
+  
+  if (isSvg) {
+    return {
+      isSvg: true,
+      finalContentType: 'image/svg+xml',
+      extension: '.svg'
+    };
+  }
+  
+  // For non-SVG files, we'll convert to JPEG for consistency
+  return {
+    isSvg: false,
+    finalContentType: 'image/jpeg',
+    extension: '.jpg'
+  };
+}
+
 export async function uploadFile(
 	buffer: Buffer,
 	fileName: string,
 	contentType: string,
-	storage: UploadMediaTypes.StorageMedia
-): Promise<{ key: string; url: string }> {
+	options: UploadOptions,
+	categoryTitle?: string
+): Promise<{ key: string; url: string; filePath: string; fileSize: number; processedContentType: string }> {
 	try {
 		const sanitizedFileName = sanitizeFileName(fileName);
-		// Create a unique key including the bucket path
-		const key = `${storage.folder}/${Date.now()}-${sanitizedFileName}`;
+		const fileTypeInfo = getFileTypeInfo(fileName, contentType);
+		
+		let processedBuffer: Buffer;
+		let finalFileName: string;
+		let imageMetadata: any = {};
 
-		const uploadParams = {
-			Bucket: storage.bucketName,
-			Key: key,
-			Body: buffer,
-			ContentType: contentType
-		};
-
-		if (contentType.includes('svg')) {
-			Object.assign(uploadParams, {
-				ContentDisposition: 'inline', // This prevents download prompt
-				ContentType: 'image/svg+xml' // Ensure proper content type for SVGs
-			});
+		if (fileTypeInfo.isSvg) {
+			// For SVG files, don't process with Sharp, keep as-is
+			processedBuffer = buffer;
+			finalFileName = sanitizedFileName; // Keep original .svg extension
+			
+			// For SVG, we'll set basic metadata manually
+			imageMetadata = {
+				width: 0, // SVGs are scalable, so dimensions aren't fixed
+				height: 0,
+				format: 'svg'
+			};
+		} else {
+			// For other image types, process with Sharp
+			processedBuffer = await sharp(buffer)
+				.resize(800, 600, { fit: 'inside', withoutEnlargement: true })
+				.jpeg({ quality: 85 })
+				.toBuffer();
+			
+			// Change extension to .jpg since we're converting to JPEG
+			const nameWithoutExt = path.basename(sanitizedFileName, path.extname(sanitizedFileName));
+			finalFileName = `${nameWithoutExt}.jpg`;
+			
+			// Get processed image metadata
+			imageMetadata = await sharp(processedBuffer).metadata();
 		}
-
-		const uploadCommand = new PutObjectCommand(uploadParams);
-		await s3Client.send(uploadCommand);
-
+		
+		// Create unique filename with timestamp and UUID
+		const nameWithoutExt = path.basename(finalFileName, path.extname(finalFileName));
+		const extension = path.extname(finalFileName);
+		const uniqueFileName = `${Date.now()}-${uuidv4()}-${nameWithoutExt}${extension}`;
+		
+		// Generate the folder path based on upload type
+		const folderPath = generateFolderPath(options, categoryTitle);
+		
+		// Create the relative path (key) that matches the nginx serving pattern
+		const key = `${folderPath}/${uniqueFileName}`;
+		
+		// Create the absolute file path for storage
+		const absoluteFilePath = path.join(STORAGE_BASE_PATH, key);
+		const directoryPath = path.dirname(absoluteFilePath);
+		
+		// Ensure directory exists
+		await ensureDirectoryExists(directoryPath);
+		
+		// Write file to filesystem
+		await fs.writeFile(absoluteFilePath, processedBuffer);
+		
+		// Verify file was written
+		const stats = await fs.stat(absoluteFilePath);
+		
 		// Return both the key (for database storage) and the public URL
 		return {
 			key,
-			url: `${R2_PUBLIC_URL}/${key}`
+			url: `${NGINX_BASE_URL}/${key}`,
+			filePath: key, // Relative path for database storage
+			fileSize: stats.size,
+			processedContentType: fileTypeInfo.finalContentType
 		};
 	} catch (error) {
 		console.error('Error uploading file:', error);
@@ -64,16 +190,32 @@ export async function uploadFile(
 }
 
 /**
- * Deletes a file from R2 storage
+ * Deletes a file from filesystem
  */
-export async function deleteFile(key: string, storage: UploadMediaTypes.StorageMedia): Promise<boolean> {
+export async function deleteFile(key: string): Promise<boolean> {
 	try {
-		const command = new DeleteObjectCommand({
-			Bucket: storage.bucketName,
-			Key: key
-		});
-
-		await s3Client.send(command);
+		const absoluteFilePath = path.join(STORAGE_BASE_PATH, key);
+		
+		// Check if file exists before attempting deletion
+		try {
+			await fs.access(absoluteFilePath);
+		} catch (error) {
+			// File doesn't exist, return false
+			console.warn(`File not found for deletion: ${key}`);
+			return false;
+		}
+		
+		// Delete the file
+		await fs.unlink(absoluteFilePath);
+		
+		// Try to remove empty directories (optional cleanup)
+		const dirPath = path.dirname(absoluteFilePath);
+		try {
+			await fs.rmdir(dirPath);
+		} catch (error) {
+			// Directory not empty or other error, ignore
+		}
+		
 		return true;
 	} catch (error) {
 		console.error('Error deleting file:', error);
@@ -82,7 +224,7 @@ export async function deleteFile(key: string, storage: UploadMediaTypes.StorageM
 }
 
 export function getPublicUrl(key: string): string {
-	return `${R2_PUBLIC_URL}/${key}`;
+	return `${NGINX_BASE_URL}/${key}`;
 }
 
 export async function streamToBuffer(stream: NodeJS.ReadableStream): Promise<Buffer> {
@@ -97,4 +239,103 @@ export async function streamToBuffer(stream: NodeJS.ReadableStream): Promise<Buf
 	}
 
 	return Buffer.concat(chunks);
+}
+
+/**
+ * Check if a file exists on the filesystem
+ */
+export async function fileExists(key: string): Promise<boolean> {
+	try {
+		const absoluteFilePath = path.join(STORAGE_BASE_PATH, key);
+		await fs.access(absoluteFilePath);
+		return true;
+	} catch (error) {
+		return false;
+	}
+}
+
+/**
+ * Get file metadata from filesystem
+ */
+export async function getFileMetadata(key: string): Promise<{
+	size: number;
+	mtime: Date;
+	exists: boolean;
+}> {
+	try {
+		const absoluteFilePath = path.join(STORAGE_BASE_PATH, key);
+		const stats = await fs.stat(absoluteFilePath);
+		
+		return {
+			size: stats.size,
+			mtime: stats.mtime,
+			exists: true
+		};
+	} catch (error) {
+		return {
+			size: 0,
+			mtime: new Date(),
+			exists: false
+		};
+	}
+}
+
+/**
+ * Clean up category folder when category is deleted
+ */
+export async function deleteCategoryFolder(categoryId: string, categoryTitle?: string): Promise<boolean> {
+	try {
+		const sanitizedCategoryTitle = categoryTitle ? sanitizeFolderName(categoryTitle) : 'category';
+		const categoryFolder = `${categoryId}-${sanitizedCategoryTitle}`;
+		const categoryPath = path.join(STORAGE_BASE_PATH, 'categories', categoryFolder);
+		
+		// Check if folder exists
+		try {
+			await fs.access(categoryPath);
+		} catch (error) {
+			// Folder doesn't exist, return true (already cleaned)
+			return true;
+		}
+		
+		// Remove entire category folder recursively
+		await fs.rm(categoryPath, { recursive: true, force: true });
+		
+		return true;
+	} catch (error) {
+		console.error('Error deleting category folder:', error);
+		throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Failed to delete category folder');
+	}
+}
+
+/**
+ * Rename category folder when category title changes
+ */
+export async function renameCategoryFolder(
+	categoryId: string, 
+	oldTitle: string, 
+	newTitle: string
+): Promise<boolean> {
+	try {
+		const oldCategoryFolder = `${categoryId}-${sanitizeFolderName(oldTitle)}`;
+		const newCategoryFolder = `${categoryId}-${sanitizeFolderName(newTitle)}`;
+		
+		const oldPath = path.join(STORAGE_BASE_PATH, 'categories', oldCategoryFolder);
+		const newPath = path.join(STORAGE_BASE_PATH, 'categories', newCategoryFolder);
+		
+		// Check if old folder exists
+		try {
+			await fs.access(oldPath);
+		} catch (error) {
+			// Old folder doesn't exist, nothing to rename
+			return true;
+		}
+		
+		// Rename the folder
+		await fs.rename(oldPath, newPath);
+		
+		return true;
+	} catch (error) {
+		console.error('Error renaming category folder:', error);
+		throw new ApiError(StatusCodes.INTERNAL_SERVER_ERROR, 'Failed to rename category folder');
+	}
 }

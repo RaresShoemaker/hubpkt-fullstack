@@ -2,8 +2,9 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../db/prisma-client';
 import { StatusCodes } from 'http-status-codes';
 import ApiError from '../utils/ApiError';
-import { CardTypes, UploadMediaTypes } from '../types';
-import { ImageMetadataServices } from './index';
+import { CardTypes } from '../types';
+import { uploadFile, deleteFile, FileUploadType } from './uploadMedia.service';
+import sharp from 'sharp';
 
 export const getNextCardOrder = async (categoryId: string): Promise<number> => {
 	const lastCard = await prisma.card.findFirst({
@@ -16,9 +17,75 @@ export const getNextCardOrder = async (categoryId: string): Promise<number> => {
 
 export const createCard = async (data: CardTypes.CreateCardInput, imageBuffer: Buffer, filename: string) => {
 	try {
-		const { imageMetadata, url } = await ImageMetadataServices.createImageMetadata(imageBuffer, filename, {
-			bucketName: UploadMediaTypes.UploadMediaBucket.MAIN_BUCKET,
-			folder: UploadMediaTypes.UploadMediaFolders.CARDS
+		// Get category info for folder structure
+		const category = await prisma.category.findUnique({
+			where: { id: data.categoryId },
+			select: { id: true, title: true, userId: true }
+		});
+
+		if (!category) {
+			throw new ApiError(StatusCodes.NOT_FOUND, 'Category not found');
+		}
+
+		// Verify user owns the category
+		if (category.userId !== data.userId) {
+			throw new ApiError(StatusCodes.FORBIDDEN, 'User does not own this category');
+		}
+
+		// Determine file type and processing method
+		const fileExtension = path.extname(filename).toLowerCase();
+		const isSvg = fileExtension === '.svg';
+		
+		let processedBuffer: Buffer;
+		let finalContentType: string;
+		let imageMetadata: any = {};
+
+		if (isSvg) {
+			// For SVG files, don't process with Sharp
+			processedBuffer = imageBuffer;
+			finalContentType = 'image/svg+xml';
+			
+			// SVG files don't have fixed dimensions
+			imageMetadata = {
+				width: 0,
+				height: 0
+			};
+		} else {
+			// For other image types, process with Sharp
+			processedBuffer = await sharp(imageBuffer)
+				.resize(800, 600, { fit: 'inside', withoutEnlargement: true })
+				.jpeg({ quality: 85 })
+				.toBuffer();
+			
+			finalContentType = 'image/jpeg';
+			
+			// Get processed image metadata
+			imageMetadata = await sharp(processedBuffer).metadata();
+		}
+
+		// Upload to filesystem with category-specific folder structure
+		const uploadResult = await uploadFile(
+			processedBuffer,
+			filename,
+			finalContentType,
+			{
+				categoryId: data.categoryId,
+				uploadType: FileUploadType.CARD_IMAGE
+			},
+			category.title
+		);
+
+		// Create image metadata record
+		const imageMetadataRecord = await prisma.imageMetadata.create({
+			data: {
+				width: imageMetadata.width || 0,
+				height: imageMetadata.height || 0,
+				size: uploadResult.fileSize,
+				mimeType: finalContentType,
+				url: uploadResult.url,
+				filePath: uploadResult.filePath,
+				fileName: filename
+			}
 		});
 
 		if (!data.order) {
@@ -38,10 +105,10 @@ export const createCard = async (data: CardTypes.CreateCardInput, imageBuffer: B
 				isPreview: data.isPreview,
 				href: data.href,
 				isSquare: data.isSquare,
-				image: url,
+				image: uploadResult.url,
 				imageMetadata: {
 					connect: {
-						id: imageMetadata.id
+						id: imageMetadataRecord.id
 					}
 				},
 				category: {
@@ -81,37 +148,81 @@ export const updateCard = async (
 		if (imageBuffer && filename) {
 			const card = await prisma.card.findUnique({
 				where: { id },
-				include: { imageMetadata: true }
+				include: { 
+					imageMetadata: true,
+					category: true 
+				}
 			});
 
 			if (!card) {
 				throw new ApiError(StatusCodes.NOT_FOUND, 'Card not found');
 			}
 
+			// Delete old image if exists
 			if (card.imageMetadata) {
-				const { imageMetadata: newMetadata, url } = await ImageMetadataServices.updateImageMetadata(
-					card.imageMetadata.id,
-					imageBuffer,
-					filename,
-					{
-						bucketName: UploadMediaTypes.UploadMediaBucket.MAIN_BUCKET,
-						folder: UploadMediaTypes.UploadMediaFolders.CARDS
-					}
-				);
-				imageMetadata = newMetadata;
-				imageUrl = url;
-			} else {
-				const { imageMetadata: newMetadata, url } = await ImageMetadataServices.createImageMetadata(
-					imageBuffer,
-					filename,
-					{
-						bucketName: UploadMediaTypes.UploadMediaBucket.MAIN_BUCKET,
-						folder: UploadMediaTypes.UploadMediaFolders.CARDS
-					}
-				);
-				imageMetadata = newMetadata;
-				imageUrl = url;
+				await deleteFile(card.imageMetadata.filePath);
+				await prisma.imageMetadata.delete({
+					where: { id: card.imageMetadata.id }
+				});
 			}
+
+			// Determine file type and processing method
+			const fileExtension = path.extname(filename).toLowerCase();
+			const isSvg = fileExtension === '.svg';
+			
+			let processedBuffer: Buffer;
+			let finalContentType: string;
+			let imageMetadataInfo: any = {};
+
+			if (isSvg) {
+				// For SVG files, don't process with Sharp
+				processedBuffer = imageBuffer;
+				finalContentType = 'image/svg+xml';
+				
+				// SVG files don't have fixed dimensions
+				imageMetadataInfo = {
+					width: 0,
+					height: 0
+				};
+			} else {
+				// For other image types, process with Sharp
+				processedBuffer = await sharp(imageBuffer)
+					.resize(800, 600, { fit: 'inside', withoutEnlargement: true })
+					.jpeg({ quality: 85 })
+					.toBuffer();
+				
+				finalContentType = 'image/jpeg';
+				
+				// Get processed image metadata
+				imageMetadataInfo = await sharp(processedBuffer).metadata();
+			}
+
+			// Upload new image to category-specific folder
+			const uploadResult = await uploadFile(
+				processedBuffer,
+				filename,
+				finalContentType,
+				{
+					categoryId: card.categoryId,
+					uploadType: FileUploadType.CARD_IMAGE
+				},
+				card.category.title
+			);
+
+			// Create new image metadata with correct MIME type
+			imageMetadata = await prisma.imageMetadata.create({
+				data: {
+					width: imageMetadataInfo.width || 0,
+					height: imageMetadataInfo.height || 0,
+					size: uploadResult.fileSize,
+					mimeType: finalContentType,
+					url: uploadResult.url,
+					filePath: uploadResult.filePath,
+					fileName: filename
+				}
+			});
+
+			imageUrl = uploadResult.url;
 		}
 
 		const { categoryId, ...cleanData } = data;
@@ -155,15 +266,23 @@ export async function deleteCard(id: string) {
 			throw new ApiError(StatusCodes.NOT_FOUND, 'Card not found');
 		}
 
-		// First, delete the associated image metadata if it exists
-		if (card.imageMetadata) {
-			await prisma.imageMetadata.delete({
-				where: { id: card.imageMetadata.id }
-			});
-		}
+		// Start transaction for cleanup
+		await prisma.$transaction(async (tx) => {
+			// Delete image file and metadata if exists
+			if (card.imageMetadata) {
+				// Delete file from filesystem
+				await deleteFile(card.imageMetadata.filePath);
+				
+				// Delete image metadata record
+				await tx.imageMetadata.delete({
+					where: { id: card.imageMetadata.id }
+				});
+			}
 
-		await prisma.card.delete({
-			where: { id }
+			// Delete the card
+			await tx.card.delete({
+				where: { id }
+			});
 		});
 
 		return true;
@@ -364,6 +483,7 @@ export const reorderCards = async (categoryId: string, newCardsOrder: string[]) 
 };
 
 import { randomInt } from 'crypto';
+import path from 'path';
 
 //This function is handling the reorder of the first 20 cards.
 export const reorderFirstCards = async (categoryId: string, newCardsOrder: string[]) => {

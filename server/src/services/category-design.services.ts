@@ -8,8 +8,8 @@ import {
   CreateHtmlElementInput,
   UpdateHtmlElementInput 
 } from '../types/categoryDesign.types';
-import { UploadMediaTypes } from '../types';
-import { ImageMetadataServices } from './index';
+import { uploadFile, deleteFile, FileUploadType } from './uploadMedia.service';
+import sharp from 'sharp';
 
 // Create a new design element
 export async function createDesignElement(
@@ -27,21 +27,68 @@ export async function createDesignElement(
       throw new ApiError(StatusCodes.NOT_FOUND, 'Category not found');
     }
 
-    // Upload image and create metadata
-    const { imageMetadata, url } = await ImageMetadataServices.createImageMetadata(
-      imageBuffer, 
-      fileName, 
+    // Process image with sharp based on device type
+    let processedBuffer: Buffer;
+    
+    switch (data.device) {
+      case DeviceSize.mobile:
+        processedBuffer = await sharp(imageBuffer)
+          .resize(375, 667, { fit: 'cover', withoutEnlargement: true })
+          .jpeg({ quality: 85 })
+          .toBuffer();
+        break;
+      case DeviceSize.tablet:
+        processedBuffer = await sharp(imageBuffer)
+          .resize(768, 1024, { fit: 'cover', withoutEnlargement: true })
+          .jpeg({ quality: 85 })
+          .toBuffer();
+        break;
+      case DeviceSize.desktop:
+        processedBuffer = await sharp(imageBuffer)
+          .resize(1920, 1080, { fit: 'cover', withoutEnlargement: true })
+          .jpeg({ quality: 85 })
+          .toBuffer();
+        break;
+      default:
+        processedBuffer = await sharp(imageBuffer)
+          .jpeg({ quality: 85 })
+          .toBuffer();
+    }
+
+    // Get image metadata
+    const metadata = await sharp(processedBuffer).metadata();
+
+    // Upload to device-specific folder within category
+    const uploadResult = await uploadFile(
+      processedBuffer,
+      fileName,
+      'image/jpeg', // Using processed JPEG
       {
-        bucketName: UploadMediaTypes.UploadMediaBucket.MAIN_BUCKET,
-        folder: UploadMediaTypes.UploadMediaFolders.CATEGORIES
-      }
+        categoryId: data.categoryId,
+        uploadType: FileUploadType.DESIGN_ELEMENT,
+        deviceSize: data.device as 'mobile' | 'tablet' | 'desktop'
+      },
+      category.title
     );
+
+    // Create image metadata record
+    const imageMetadata = await prisma.imageMetadata.create({
+      data: {
+        width: metadata.width || 0,
+        height: metadata.height || 0,
+        size: uploadResult.fileSize,
+        mimeType: 'image/jpeg',
+        url: uploadResult.url,
+        filePath: uploadResult.filePath,
+        fileName: fileName
+      }
+    });
 
     // Create design element
     const element = await prisma.designElement.create({
       data: {
-        url,
-        image: url, // Set both url and image to the same value
+        url: uploadResult.url,
+        image: uploadResult.url, // Set both url and image to the same value
         order: data.order,
         device: data.device,
         categoryId: data.categoryId,
@@ -89,7 +136,10 @@ export async function updateDesignElement(
   try {
     const element = await prisma.designElement.findUnique({
       where: { id },
-      include: { imageMetadata: true }
+      include: { 
+        imageMetadata: true,
+        category: true
+      }
     });
 
     if (!element) {
@@ -100,41 +150,81 @@ export async function updateDesignElement(
 
     // Update image if provided
     if (imageBuffer && fileName) {
+      // Delete old image if exists
       if (element.imageMetadata) {
-        // Update existing image
-        const { url } = await ImageMetadataServices.updateImageMetadata(
-          element.imageMetadata.id,
-          imageBuffer,
-          fileName,
-          {
-            bucketName: UploadMediaTypes.UploadMediaBucket.MAIN_BUCKET,
-            folder: UploadMediaTypes.UploadMediaFolders.CATEGORIES
-          }
-        );
-        imageUrl = url;
-      } else {
-        // Create new image
-        const { imageMetadata, url } = await ImageMetadataServices.createImageMetadata(
-          imageBuffer,
-          fileName,
-          {
-            bucketName: UploadMediaTypes.UploadMediaBucket.MAIN_BUCKET,
-            folder: UploadMediaTypes.UploadMediaFolders.CATEGORIES
-          }
-        );
-        
-        // Connect the new image metadata to the design element
-        await prisma.designElement.update({
-          where: { id },
-          data: {
-            imageMetadata: {
-              connect: { id: imageMetadata.id }
-            }
-          }
+        await deleteFile(element.imageMetadata.filePath);
+        await prisma.imageMetadata.delete({
+          where: { id: element.imageMetadata.id }
         });
-        
-        imageUrl = url;
       }
+
+      // Process new image based on device type
+      let processedBuffer: Buffer;
+      
+      switch (element.device) {
+        case DeviceSize.mobile:
+          processedBuffer = await sharp(imageBuffer)
+            .resize(375, 667, { fit: 'cover', withoutEnlargement: true })
+            .jpeg({ quality: 85 })
+            .toBuffer();
+          break;
+        case DeviceSize.tablet:
+          processedBuffer = await sharp(imageBuffer)
+            .resize(768, 1024, { fit: 'cover', withoutEnlargement: true })
+            .jpeg({ quality: 85 })
+            .toBuffer();
+          break;
+        case DeviceSize.desktop:
+          processedBuffer = await sharp(imageBuffer)
+            .resize(1920, 1080, { fit: 'cover', withoutEnlargement: true })
+            .jpeg({ quality: 85 })
+            .toBuffer();
+          break;
+        default:
+          processedBuffer = await sharp(imageBuffer)
+            .jpeg({ quality: 85 })
+            .toBuffer();
+      }
+
+      const metadata = await sharp(processedBuffer).metadata();
+
+      // Upload new image to device-specific folder
+      const uploadResult = await uploadFile(
+        processedBuffer,
+        fileName,
+        'image/jpeg', // Using processed JPEG
+        {
+          categoryId: element.categoryId,
+          uploadType: FileUploadType.DESIGN_ELEMENT,
+          deviceSize: element.device as 'mobile' | 'tablet' | 'desktop'
+        },
+        element.category.title
+      );
+
+      // Create new image metadata
+      const newImageMetadata = await prisma.imageMetadata.create({
+        data: {
+          width: metadata.width || 0,
+          height: metadata.height || 0,
+          size: uploadResult.fileSize,
+          mimeType: 'image/jpeg',
+          url: uploadResult.url,
+          filePath: uploadResult.filePath,
+          fileName: fileName
+        }
+      });
+      
+      // Connect the new image metadata to the design element
+      await prisma.designElement.update({
+        where: { id },
+        data: {
+          imageMetadata: {
+            connect: { id: newImageMetadata.id }
+          }
+        }
+      });
+      
+      imageUrl = uploadResult.url;
     }
 
     // Update the design element
@@ -175,21 +265,25 @@ export async function deleteDesignElement(id: string) {
       throw new ApiError(StatusCodes.NOT_FOUND, 'Design element not found');
     }
 
-    // Delete associated HTML elements
-    await prisma.htmlElement.deleteMany({
-      where: { designElementId: id }
-    });
-
-    // Delete image metadata if it exists
-    if (element.imageMetadata) {
-      await prisma.imageMetadata.delete({
-        where: { id: element.imageMetadataId! }
+    // Start transaction for cleanup
+    await prisma.$transaction(async (tx) => {
+      // Delete associated HTML elements
+      await tx.htmlElement.deleteMany({
+        where: { designElementId: id }
       });
-    }
 
-    // Delete the design element
-    await prisma.designElement.delete({
-      where: { id }
+      // Delete image file and metadata if exists
+      if (element.imageMetadata) {
+        await deleteFile(element.imageMetadata.filePath);
+        await tx.imageMetadata.delete({
+          where: { id: element.imageMetadataId! }
+        });
+      }
+
+      // Delete the design element
+      await tx.designElement.delete({
+        where: { id }
+      });
     });
 
     return true;
@@ -409,4 +503,4 @@ export const getCategoryDesignById = async (id: string) => {
 });
 
   return design;
-}
+};
