@@ -57,8 +57,6 @@ async function ensureDirectoryExists(dirPath: string): Promise<void> {
 	}
 }
 
-
-
 /**
  * Generate the folder structure based on upload type and category
  */
@@ -123,19 +121,11 @@ export async function uploadFile(
 		
 		let processedBuffer: Buffer;
 		let finalFileName: string;
-		let imageMetadata: any = {};
 
 		if (fileTypeInfo.isSvg) {
 			// For SVG files, don't process with Sharp, keep as-is
 			processedBuffer = buffer;
 			finalFileName = sanitizedFileName; // Keep original .svg extension
-			
-			// For SVG, we'll set basic metadata manually
-			imageMetadata = {
-				width: 0, // SVGs are scalable, so dimensions aren't fixed
-				height: 0,
-				format: 'svg'
-			};
 		} else {
 			// For other image types, process with Sharp
 			processedBuffer = await sharp(buffer)
@@ -146,9 +136,6 @@ export async function uploadFile(
 			// Change extension to .jpg since we're converting to JPEG
 			const nameWithoutExt = path.basename(sanitizedFileName, path.extname(sanitizedFileName));
 			finalFileName = `${nameWithoutExt}.jpg`;
-			
-			// Get processed image metadata
-			imageMetadata = await sharp(processedBuffer).metadata();
 		}
 		
 		// Create unique filename with timestamp and UUID

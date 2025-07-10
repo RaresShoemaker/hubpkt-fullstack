@@ -2,8 +2,7 @@ import { PrismaClient } from '@prisma/client';
 import sharp from 'sharp';
 import { StatusCodes } from 'http-status-codes';
 import ApiError from '../utils/ApiError';
-import { uploadFile, deleteFile } from './uploadMedia.service';
-import { UploadMediaTypes } from '../types';
+import { uploadFile, deleteFile, FileUploadType } from './uploadMedia.service';
 
 const prisma = new PrismaClient();
 
@@ -111,21 +110,24 @@ export async function processImage(
 export async function createImageMetadata(
   buffer: Buffer,
   fileName: string,
-  storage: UploadMediaTypes.StorageMedia
+  categoryId: string,
+  categoryTitle: string,
+  uploadType: FileUploadType
 ) {
   try {
     // Process image and get metadata
     const { buffer: processedBuffer, metadata } = await processImage(buffer);
 
-    // Upload to R2
-    const { key, url } = await uploadFile(
+    // Upload to filesystem
+    const uploadResult = await uploadFile(
       processedBuffer,
       fileName,
       metadata.mimeType,
       {
-        bucketName: storage.bucketName,
-        folder: storage.folder
-      }
+        categoryId: categoryId,
+        uploadType: uploadType
+      },
+      categoryTitle
     );
 
     // Create metadata record in database
@@ -135,14 +137,16 @@ export async function createImageMetadata(
         height: metadata.height,
         size: metadata.size,
         mimeType: metadata.mimeType,
-        url: url
+        url: uploadResult.url,
+        filePath: uploadResult.filePath,
+        fileName: fileName
       }
     });
 
     return {
       imageMetadata,
-      key,
-      url
+      key: uploadResult.key,
+      url: uploadResult.url
     };
   } catch (error) {
     if (error instanceof ApiError) throw error;
@@ -157,7 +161,9 @@ export async function updateImageMetadata(
   id: string,
   buffer: Buffer,
   fileName: string,
-  storage: UploadMediaTypes.StorageMedia
+  categoryId: string,
+  categoryTitle: string,
+  uploadType: FileUploadType
 ) {
   try {
     // Get existing metadata
@@ -175,23 +181,20 @@ export async function updateImageMetadata(
     // Process new image
     const { buffer: processedBuffer, metadata } = await processImage(buffer);
 
-    // Upload new image to R2
-    const { key, url } = await uploadFile(
+    // Upload new image to filesystem
+    const uploadResult = await uploadFile(
       processedBuffer,
       fileName,
       metadata.mimeType,
       {
-        bucketName: storage.bucketName,
-        folder: storage.folder
-      }
+        categoryId: categoryId,
+        uploadType: uploadType
+      },
+      categoryTitle
     );
 
-    // Extract old key from URL
-    const oldUrl = new URL(existingMetadata.url);
-    const oldKey = oldUrl.pathname.slice(1); // Remove leading slash
-
-    // Delete old image from R2
-    await deleteFile(oldKey, storage);
+    // Delete old image from filesystem
+    await deleteFile(existingMetadata.filePath);
 
     // Update metadata record
     const updatedMetadata = await prisma.imageMetadata.update({
@@ -201,14 +204,16 @@ export async function updateImageMetadata(
         height: metadata.height,
         size: metadata.size,
         mimeType: metadata.mimeType,
-        url: url
+        url: uploadResult.url,
+        filePath: uploadResult.filePath,
+        fileName: fileName
       }
     });
 
     return {
       imageMetadata: updatedMetadata,
-      key,
-      url
+      key: uploadResult.key,
+      url: uploadResult.url
     };
   } catch (error) {
     if (error instanceof ApiError) throw error;
@@ -219,10 +224,7 @@ export async function updateImageMetadata(
   }
 }
 
-export async function deleteImageMetadata(
-  id: string, 
-  storage: UploadMediaTypes.StorageMedia
-) {
+export async function deleteImageMetadata(id: string) {
   try {
     const metadata = await prisma.imageMetadata.findUnique({
       where: { id }
@@ -235,12 +237,8 @@ export async function deleteImageMetadata(
       );
     }
 
-    // Extract key from URL
-    const url = new URL(metadata.url);
-    const key = url.pathname.slice(1); // Remove leading slash
-
-    // Delete from R2
-    await deleteFile(key, storage);
+    // Delete from filesystem
+    await deleteFile(metadata.filePath);
 
     // Delete metadata record
     await prisma.imageMetadata.delete({
