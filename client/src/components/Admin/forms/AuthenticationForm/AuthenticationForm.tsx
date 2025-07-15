@@ -1,16 +1,13 @@
 import React from 'react';
-import { emailValidator, 
-	nameValidator, passwordValidator
-} from '../validations/auth.validation';
+import { emailValidator, nameValidator, passwordValidator } from '../validations/auth.validation';
 import CustomInput from '../../Input';
 import { Tab, TabGroup, TabList, TabPanel, TabPanels } from '@headlessui/react';
 import clsx from 'clsx';
 import useAuthenticationForm from './useAuthForm';
 
 const AuthenticationForm: React.FC = () => {
-	const { state, dispatch, handleSubmit, 
-		confirmPasswordValidator 
-	} = useAuthenticationForm();
+	const { state, dispatch, handleSubmit, confirmPasswordValidator } = useAuthenticationForm();
+	const isProduction = import.meta.env.VITE_ENV_TYPE === 'prod';
 
 	return (
 		<div className='w-full max-w-md mx-auto p-6'>
@@ -89,7 +86,7 @@ const AuthenticationForm: React.FC = () => {
 
 					<TabPanel>
 						<form onSubmit={handleSubmit} className='space-y-6'>
-            <CustomInput
+							<CustomInput
 								label='Name'
 								value={state.name}
 								onChange={(value) => dispatch({ type: 'SET_NAME', payload: value })}
@@ -132,6 +129,14 @@ const AuthenticationForm: React.FC = () => {
 								type='password'
 								validator={confirmPasswordValidator}
 							/>
+
+							{isProduction && <CustomInput
+								label='Registration Code'
+								value={state.registrationCode}
+								onChange={(value) => dispatch({ type: 'SET_REGISTRATION_CODE', payload: value })}
+								required
+								type='text'
+							/>}
 
 							<div className='w-full flex justify-center'>
 								<button

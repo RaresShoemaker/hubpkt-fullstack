@@ -13,6 +13,7 @@ export const config = {
   // Authentication
   JWT_SECRET: process.env.JWT_SECRET!,
   JWT_EXPIRES_IN: process.env.JWT_EXPIRES_IN || '7d',
+  REGISTRATION_CODE: process.env.REGISTRATION_CODE || '',
   
   // File Storage - Filesystem Configuration
   STORAGE_BASE_PATH: process.env.STORAGE_BASE_PATH || '/app/uploads',
@@ -43,8 +44,12 @@ export const config = {
 const requiredEnvVars = [
   'DATABASE_URL',
   'JWT_SECRET',
-  'NGINX_BASE_URL'
+  'REGISTRATION_CODE'
 ];
+
+if (process.env.NODE_ENV === 'production') {
+  requiredEnvVars.push('REGISTRATION_CODE');
+}
 
 for (const envVar of requiredEnvVars) {
   if (!process.env[envVar]) {

@@ -67,6 +67,7 @@ services:
       - DATABASE_URL=${DATABASE_URL}
       - JWT_SECRET=${JWT_SECRET}
       - API_KEY=${API_KEY}
+      - REGISTRATION_CODE=${REGISTRATION_CODE}  # Add this line
       - STORAGE_BASE_PATH=/app/uploads
       - NGINX_BASE_URL=https://www.peekcode.dev
       - MAX_FILE_SIZE=5242880

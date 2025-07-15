@@ -1,7 +1,9 @@
 import { Prisma } from "@prisma/client";
 import { Request } from "express";
 
-export type RegisterUserInput = Pick<Prisma.UserCreateInput, "email" | "password" | "name">;
+export type RegisterUserInput = Pick<Prisma.UserCreateInput, "email" | "password" | "name"> & {
+  registrationCode: string; // Add this
+};
 
 export type LoginUserInput = Pick<Prisma.UserCreateInput, "email" | "password">;
 
