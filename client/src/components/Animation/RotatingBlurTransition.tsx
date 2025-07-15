@@ -22,7 +22,7 @@ const RotatingBlurTransition: React.FC<RotatingBlurTransitionProps> = ({
       {designs.map((design, index) => (
         <div
           key={index}
-          className="absolute inset-0 w-full transition-opacity duration-1000"
+          className="absolute inset-0 w-full transition-opacity duration-[1s]"
           style={{
             opacity: index === currentIndex ? 1 : 0,
             zIndex: index === currentIndex ? 1 : 0

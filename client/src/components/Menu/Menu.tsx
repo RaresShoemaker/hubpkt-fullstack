@@ -8,6 +8,8 @@ import LogoNavigation from '../Admin/Navigation/LogoNavigation';
 const MenuCategory: React.FC = () => {
 	const { items, fetchCategoriesClient } = useCategories();
 
+	const NOT_VISIBLE_CATEGORIES = ['home'];
+
 	// Fetch categories on mount to ensure we have the data
 	useEffect(() => {
 		const getCategories = async () => {
@@ -16,40 +18,40 @@ const MenuCategory: React.FC = () => {
 		getCategories();
 	}, [fetchCategoriesClient]);
 
-//shadow-[0px_0px_20px_3px_rgba(62,74,192,0.24)]
+	//shadow-[0px_0px_20px_3px_rgba(62,74,192,0.24)]
 
 	return (
-		<div className=' lg:max-h-[800px] max-h-[480px] md:hidden lg:w-full rounded-2xl bg-[#1B1B1B] px-4 py-6 lg:flex flex-col justify-between hidden
+		<div
+			className=' lg:max-h-[800px] max-h-[480px] md:hidden lg:w-full rounded-2xl bg-[#1B1B1B] px-4 py-6 lg:flex flex-col justify-between hidden
 		shadow-[0px_0px_20px_3px_rgba(22,74,192,0.20)]
-		'>
+		'
+		>
 			<div className='flex flex-col align-middle gap-1'>
 				{/* Home button */}
 				<MenuButton predefined='home' />
-				
+
 				{/* Category buttons */}
 				{items.map((item) => {
 					// Find any special categories that need custom links
 					let specialLink = undefined;
-					
+
 					// Check if this is the Creator Hub item
 					if (item.title.toLowerCase().includes('creator')) {
 						specialLink = '/creatorshub';
 					}
 
 					if (item.title.toLowerCase().includes('news')) {
-						specialLink = '/newshub'
+						specialLink = '/newshub';
 					}
 
-					return (
-						<MenuButton
-							key={item.id}
-							category={item}
-							link={specialLink}
-						/>
-					);
+					if (NOT_VISIBLE_CATEGORIES.includes(item.title.toLocaleLowerCase())) {
+						return;
+					}
+
+					return <MenuButton key={item.id} category={item} link={specialLink} />;
 				})}
 			</div>
-			
+
 			{/* Footer section */}
 			<div className='flex flex-col gap-4 mt-[30px]'>
 				<LogoNavigation />

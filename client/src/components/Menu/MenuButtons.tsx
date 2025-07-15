@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import { cn } from '../../lib/utils';
 import { Link } from 'react-router-dom';
@@ -20,15 +21,22 @@ const slugify = (text: string): string => {
     .replace(/-+$/, '');       // Trim - from end of text
 };
 
-// New interface for category data based on the provided structure
+// Helper function to check if a category is a home category
+const isHomeCategory = (category: any): boolean => {
+  if (!category) return false;
+  return category.title?.toLowerCase().includes('home') || 
+         (category.previewTitle && category.previewTitle.toLowerCase().includes('home'));
+};
+
+// Use the actual CategoryClient type from your store
 interface CategoryData {
+  image: string;
   id: string;
   title: string;
-  image: string;
-  order: number;
   hasPreview: boolean;
-  isAvailable: boolean;
   previewTitle?: string;
+  isAvailable: boolean;
+  order: number;
   hasSquareContent: boolean;
 }
 
@@ -50,9 +58,11 @@ const MenuButton: React.FC<MenuButtonProps> = ({
   customTitle 
 }) => {
   const { clientCategory, changeClientCategory } = useCategories();
+  
   // Handle predefined menu items
   if (predefined === 'home') {
-    const isSelected = clientCategory === null;
+    // Check if current category is null OR if it's a home category
+    const isSelected = clientCategory === null || isHomeCategory(clientCategory);
     
     return (
       <Link to="/" onClick={() => changeClientCategory(null)}>
@@ -73,8 +83,14 @@ const MenuButton: React.FC<MenuButtonProps> = ({
 
   // For regular category items
   if (category) {
+    // Don't render unavailable categories
+    if (!category.isAvailable) {
+      return null;
+    }
+    
     // Check if this category is selected
-    const isSelected = clientCategory?.id === category.id;
+    // Exclude home categories from showing as selected in the regular menu
+    const isSelected = clientCategory?.id === category.id && !isHomeCategory(category);
 
     // Special route for Creator Hub
     let categoryLink = link;
@@ -87,7 +103,7 @@ const MenuButton: React.FC<MenuButtonProps> = ({
         categoryLink = `/category/${slugify(category.title)}`;
       }
 
-      if ( category.title.toLowerCase().includes('news')) {
+      if (category.title.toLowerCase().includes('news')) {
         categoryLink = '/newshub';
       }
     }
@@ -110,7 +126,7 @@ const MenuButton: React.FC<MenuButtonProps> = ({
         >
           <CategoryIcon 
             title={category.title} 
-            image={category.image} 
+            image={category.image}
             size="md" 
           />
           <p>{customTitle || category.previewTitle || category.title}</p>

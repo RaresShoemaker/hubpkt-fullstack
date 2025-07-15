@@ -9,6 +9,8 @@ const MobileMenu = () => {
 	const [isOpen, setIsOpen] = useState(false);
 	const { items } = useCategories();
 
+		const NOT_VISIBLE_CATEGORIES = ['home'];
+
 	// Lock body scroll when menu is open
 	useEffect(() => {
 		if (isOpen) {
@@ -63,6 +65,10 @@ const MobileMenu = () => {
 						} else {
 							categoryLink = `/category/${slugify(category.title)}`;
 						}
+
+						if (NOT_VISIBLE_CATEGORIES.includes(category.title.toLocaleLowerCase())) {
+						return;
+					}
 
 						return (
 							<MenuButton

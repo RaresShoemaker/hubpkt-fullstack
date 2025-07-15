@@ -16,7 +16,9 @@ const useAuthenticationForm = () => {
     isValidEmail: false,
     isValidPassword: false,
     isValidConfirmPassword: false,
-    formLayout: 'login'
+    formLayout: 'login',
+    registrationCode: '',
+    isValidRegistrationCode: false
   };
 
   const formReducer = (state: FormState, action: FormAction): FormState => {
@@ -29,12 +31,16 @@ const useAuthenticationForm = () => {
         return { ...state, password: action.payload };
       case 'SET_CONFIRM_PASSWORD':
         return { ...state, confirmPassword: action.payload };
+      case 'SET_REGISTRATION_CODE': // Add this
+        return { ...state, registrationCode: action.payload };
       case 'SET_EMAIL_VALIDITY':
         return { ...state, isValidEmail: action.payload };
       case 'SET_PASSWORD_VALIDITY':
         return { ...state, isValidPassword: action.payload };
       case 'SET_CONFIRM_PASSWORD_VALIDITY':
         return { ...state, isValidConfirmPassword: action.payload };
+      case 'SET_REGISTRATION_CODE_VALIDITY': // Add this
+        return { ...state, isValidRegistrationCode: action.payload };
       case 'SET_FORM_LAYOUT':
         return { 
           ...initialState, 
@@ -58,7 +64,8 @@ const useAuthenticationForm = () => {
     const isLoginValid = state.isValidEmail && state.isValidPassword;
     const isRegisterValid = 
       isLoginValid && 
-      state.isValidConfirmPassword && 
+      state.isValidConfirmPassword &&
+      state.isValidRegistrationCode && // Add this
       state.password === state.confirmPassword;
 
     try {
@@ -73,7 +80,8 @@ const useAuthenticationForm = () => {
         success = await register({
           name: state.name,
           email: state.email,
-          password: state.password
+          password: state.password,
+          registrationCode: state.registrationCode // Add this
         });
       }
 
@@ -94,18 +102,28 @@ const useAuthenticationForm = () => {
     return null;
   }, [state.password]);
 
+  // Add registration code validator
+  const registrationCodeValidator = useCallback((value: string) => {
+    if (!value || value.trim().length === 0) {
+      return 'Registration code is required';
+    }
+    return null;
+  }, []);
+
   return {
     state,
     dispatch,
     handleSubmit,
     confirmPasswordValidator,
+    registrationCodeValidator, // Add this
     isLoading,
     errors,
     isSubmittable: state.formLayout === 'login' 
       ? state.isValidEmail && state.isValidPassword
       : state.isValidEmail && 
         state.isValidPassword && 
-        state.isValidConfirmPassword && 
+        state.isValidConfirmPassword &&
+        state.isValidRegistrationCode && // Add this
         state.password === state.confirmPassword
   };
 };
