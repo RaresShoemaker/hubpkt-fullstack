@@ -14,7 +14,7 @@ const app = express();
 app.set('trust proxy', 1); // Trust first proxy (for Heroku, AWS, etc.)
 
 // Configure CORS based on environment
-const allowedOrigins =
+const allowedOrigins: (string | RegExp)[] =
 	process.env.NODE_ENV === 'production'
 		? [process.env.CLIENT_ORIGIN || 'http://localhost']
 		: ['http://localhost:5173']; // Development origin

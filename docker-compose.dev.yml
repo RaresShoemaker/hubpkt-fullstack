@@ -1,0 +1,92 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: hubpkt-postgres-dev
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: hubpkt
+    ports:
+      - "5432:5432"  # Expose for direct access
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    networks:
+      - dev_network
+    restart: unless-stopped
+
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: hubpkt-server-dev
+    ports:
+      - "4001:4001"
+    environment:
+      - DATABASE_URL=postgres://postgres:postgres@postgres:5432/hubpkt
+      - JWT_SECRET=${JWT_SECRET}
+      - API_KEY=${API_KEY}
+      - NODE_ENV=development
+      - PORT=4001
+      - STORAGE_BASE_PATH=/app/uploads
+      - NGINX_BASE_URL=http://localhost:8080
+      - MAX_FILE_SIZE=${MAX_FILE_SIZE}
+      - ALLOWED_FILE_TYPES=${ALLOWED_FILE_TYPES}
+      - REGISTRATION_CODE=${REGISTRATION_CODE}
+    volumes:
+      - ./server:/usr/src/app
+      - /usr/src/app/node_modules
+      - uploads_dev_data:/app/uploads
+    depends_on:
+      - postgres
+    networks:
+      - dev_network
+    restart: unless-stopped
+    command: sh -c "npm run prisma:generate && npm run prisma:migrate:deploy && npm run dev"
+
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: hubpkt-client-dev
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_API_KEY=${VITE_API_KEY}
+      - VITE_API_BASE_URL=http://localhost:4001/api
+      - VITE_JOTFORM_API_KEY=${VITE_JOTFORM_API_KEY}
+      - VITE_JOTFORM_FORM_ID=${VITE_JOTFORM_FORM_ID}
+      - VITE_JOTFORM_FORM_CREATORS_ID=${VITE_JOTFORM_FORM_CREATORS_ID}
+      - VITE_TRACKING_ID_GA=${VITE_TRACKING_ID_GA}
+    volumes:
+      - ./client:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      - server
+    networks:
+      - dev_network
+    restart: unless-stopped
+    command: npm run dev -- --host 0.0.0.0 --port 5173
+
+  # nginx for serving uploaded files
+  nginx:
+    image: nginx:alpine
+    container_name: hubpkt-nginx-dev
+    ports:
+      - "8080:80"
+    volumes:
+      - uploads_dev_data:/usr/share/nginx/html
+    depends_on:
+      - server
+    networks:
+      - dev_network
+    restart: unless-stopped
+
+volumes:
+  postgres_dev_data:
+  uploads_dev_data:
+
+networks:
+  dev_network:
+    driver: bridge

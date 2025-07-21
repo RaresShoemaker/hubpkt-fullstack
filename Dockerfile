@@ -9,7 +9,7 @@ WORKDIR /app
 COPY server/package*.json ./server/
 COPY server/prisma ./server/prisma/
 WORKDIR /app/server
-RUN npm ci
+RUN npm ci --production=false
 
 # Copy client dependencies and install  
 WORKDIR /app
@@ -21,15 +21,17 @@ RUN npm ci
 WORKDIR /app
 COPY server ./server/
 COPY client ./client/
-COPY nginx ./nginx/
 COPY nginx-simple.conf ./
 
 # Build client
 WORKDIR /app/client
 RUN npm run build
 
-# Build server
+# Rebuild server dependencies after copying source (fixes bcrypt)
 WORKDIR /app/server
+RUN rm -rf node_modules && npm ci --production=false
+
+# Build server
 RUN npm run build
 
 # Create uploads directory

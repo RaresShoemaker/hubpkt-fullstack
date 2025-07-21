@@ -1,3 +1,6 @@
+# Production Docker Compose - Single container on port 80
+version: '3.8'
+
 services:
   postgres:
     image: postgres:15-alpine

@@ -11,6 +11,33 @@ A modern fullstack React/Node.js application with PostgreSQL database, featuring
 - **Authentication**: JWT-based auth system
 - **Deployment**: Simple Docker setup
 
+## Development vs Production
+
+### Development Setup (Separate Ports)
+For local development with hot reload and separate ports:
+
+```bash
+# Start development environment
+docker compose -f docker-compose.dev.yml up --build
+
+# Access services:
+# Frontend: http://localhost:5173 (React dev server with hot reload)
+# Backend API: http://localhost:4001
+# Uploads: http://localhost:8080
+# Database: localhost:5432
+```
+
+### Production Setup (Single Port)  
+For production deployment with everything on port 80:
+
+```bash
+# Start production environment  
+docker compose up --build
+
+# Access application:
+# Everything: http://localhost (or your domain)
+```
+
 ## Quick Deployment
 
 ### Prerequisites
