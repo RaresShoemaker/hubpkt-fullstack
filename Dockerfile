@@ -41,10 +41,13 @@ RUN npm run build
 
 # Rebuild server dependencies after copying source (fixes bcrypt)
 WORKDIR /app/server
-RUN rm -rf node_modules && npm ci --omit=dev
+RUN rm -rf node_modules && npm ci
 
 # Build server
 RUN npm run build
+
+# Remove dev dependencies after build
+RUN rm -rf node_modules && npm ci --omit=dev
 
 # Create uploads directory
 RUN mkdir -p /app/uploads
