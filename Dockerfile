@@ -43,14 +43,14 @@ ENV VITE_ENV_TYPE=$VITE_ENV_TYPE
 ENV NODE_ENV=$NODE_ENV
 RUN npm run build
 
-# Rebuild server dependencies after copying source (fixes bcrypt)
+# Rebuild server dependencies after copying source (fixes bcrypt)  
 WORKDIR /app/server
 RUN rm -rf node_modules && npm ci
 
-# Build server
+# Build server TypeScript (dev dependencies are available)
 RUN npm run build
 
-# Remove dev dependencies after build
+# Clean install for production (remove dev dependencies)
 RUN rm -rf node_modules && npm ci --omit=dev
 
 # Create uploads directory
