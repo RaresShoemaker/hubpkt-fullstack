@@ -103,23 +103,23 @@ const useAuthenticationForm = () => {
   }, [state.password]);
 
   // Add registration code validator
-  const registrationCodeValidator = useCallback((value: string) => {
-    // Skip validation in development mode
-    if (import.meta.env.DEV) {
-      return null;
-    }
-    if (!value || value.trim().length === 0) {
-      return 'Registration code is required';
-    }
-    return null;
-  }, []);
+  // const registrationCodeValidator = useCallback((value: string) => {
+  //   // Skip validation in development mode
+  //   if (import.meta.env.DEV) {
+  //     return null;
+  //   }
+  //   if (!value || value.trim().length === 0) {
+  //     return 'Registration code is required';
+  //   }
+  //   return null;
+  // }, []);
 
   return {
     state,
     dispatch,
     handleSubmit,
     confirmPasswordValidator,
-    registrationCodeValidator, // Add this
+    // registrationCodeValidator,
     isLoading,
     errors,
     isSubmittable: state.formLayout === 'login' 
@@ -127,7 +127,7 @@ const useAuthenticationForm = () => {
       : state.isValidEmail && 
         state.isValidPassword && 
         state.isValidConfirmPassword &&
-        (import.meta.env.DEV || state.isValidRegistrationCode) && // Skip registration code check in dev
+        // (import.meta.env.DEV || state.isValidRegistrationCode) && // Skip registration code check in dev
         state.password === state.confirmPassword
   };
 };
