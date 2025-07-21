@@ -16,7 +16,7 @@ app.set('trust proxy', 1); // Trust first proxy (for Heroku, AWS, etc.)
 // Configure CORS based on environment
 const allowedOrigins =
 	process.env.NODE_ENV === 'production'
-		? [process.env.CLIENT_ORIGIN || 'https://peekcode.dev', /\.peekcode\.dev$/]
+		? [process.env.CLIENT_ORIGIN || 'http://localhost']
 		: ['http://localhost:5173']; // Development origin
 
 app.use(
