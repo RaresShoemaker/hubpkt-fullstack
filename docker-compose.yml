@@ -19,6 +19,13 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL}
+        VITE_API_KEY: ${VITE_API_KEY}
+        VITE_JOTFORM_API_KEY: ${VITE_JOTFORM_API_KEY}
+        VITE_JOTFORM_FORM_ID: ${VITE_JOTFORM_FORM_ID}
+        VITE_JOTFORM_FORM_CREATORS_ID: ${VITE_JOTFORM_FORM_CREATORS_ID}
+        VITE_TRACKING_ID_GA: ${VITE_TRACKING_ID_GA}
     container_name: hubpkt-app
     ports:
       - "3000:80"

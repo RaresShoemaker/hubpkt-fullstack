@@ -9,7 +9,7 @@ WORKDIR /app
 COPY server/package*.json ./server/
 COPY server/prisma ./server/prisma/
 WORKDIR /app/server
-RUN npm ci --production=false
+RUN npm ci --omit=dev
 
 # Copy client dependencies and install  
 WORKDIR /app
@@ -23,13 +23,25 @@ COPY server ./server/
 COPY client ./client/
 COPY nginx-simple.conf ./
 
-# Build client
+# Build client with environment variables
 WORKDIR /app/client
+ARG VITE_API_BASE_URL
+ARG VITE_API_KEY
+ARG VITE_JOTFORM_API_KEY
+ARG VITE_JOTFORM_FORM_ID
+ARG VITE_JOTFORM_FORM_CREATORS_ID
+ARG VITE_TRACKING_ID_GA
+ENV VITE_API_BASE_URL=$VITE_API_BASE_URL
+ENV VITE_API_KEY=$VITE_API_KEY
+ENV VITE_JOTFORM_API_KEY=$VITE_JOTFORM_API_KEY
+ENV VITE_JOTFORM_FORM_ID=$VITE_JOTFORM_FORM_ID
+ENV VITE_JOTFORM_FORM_CREATORS_ID=$VITE_JOTFORM_FORM_CREATORS_ID
+ENV VITE_TRACKING_ID_GA=$VITE_TRACKING_ID_GA
 RUN npm run build
 
 # Rebuild server dependencies after copying source (fixes bcrypt)
 WORKDIR /app/server
-RUN rm -rf node_modules && npm ci --production=false
+RUN rm -rf node_modules && npm ci --omit=dev
 
 # Build server
 RUN npm run build
