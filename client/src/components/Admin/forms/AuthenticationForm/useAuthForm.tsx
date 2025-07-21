@@ -31,7 +31,7 @@ const useAuthenticationForm = () => {
         return { ...state, password: action.payload };
       case 'SET_CONFIRM_PASSWORD':
         return { ...state, confirmPassword: action.payload };
-      case 'SET_REGISTRATION_CODE': // Add this
+      case 'SET_REGISTRATION_CODE':
         return { ...state, registrationCode: action.payload };
       case 'SET_EMAIL_VALIDITY':
         return { ...state, isValidEmail: action.payload };
@@ -62,11 +62,6 @@ const useAuthenticationForm = () => {
     e.preventDefault();
 
     const isLoginValid = state.isValidEmail && state.isValidPassword;
-    const isRegisterValid = 
-      isLoginValid && 
-      state.isValidConfirmPassword &&
-      (import.meta.env.DEV || state.isValidRegistrationCode) && // Skip registration code check in dev
-      state.password === state.confirmPassword;
 
     try {
       let success = false;
@@ -76,12 +71,12 @@ const useAuthenticationForm = () => {
           email: state.email,
           password: state.password
         });
-      } else if (state.formLayout === 'register' && isRegisterValid) {
+      } else if (state.formLayout === 'register') {
         success = await register({
           name: state.name,
           email: state.email,
           password: state.password,
-          registrationCode: state.registrationCode // Add this
+          registrationCode: state.registrationCode
         });
       }
 

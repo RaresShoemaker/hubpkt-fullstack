@@ -134,7 +134,7 @@ const AuthenticationForm: React.FC = () => {
 								label='Registration Code'
 								value={state.registrationCode}
 								onChange={(value) => dispatch({ type: 'SET_REGISTRATION_CODE', payload: value })}
-								// required
+								required
 								type='text'
 							/>}
 
