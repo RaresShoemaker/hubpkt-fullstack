@@ -1,79 +1,302 @@
-Understanding the Grid Dimensions in the HeroContainer
-The grid system in the HeroContainer component uses CSS Grid Layout with configurable dimensions. Let me explain the parameters and their minimum and maximum values:
-Column and Row Count
+# HubPKT - Fullstack Application
 
-Columns: Default is 12 (similar to Bootstrap's grid system)
+A modern fullstack React/Node.js application with PostgreSQL database, featuring content management, user authentication, and file uploads.
 
-Min: 1 column
-Max: No technical limit, but practically 24 is usually the upper bound for usability
-Common values: 12 for general layouts, 16 for more granular control
+## Features
 
+- **Frontend**: React 18 with TypeScript, TailwindCSS, Redux Toolkit
+- **Backend**: Node.js with Express, Prisma ORM
+- **Database**: PostgreSQL
+- **File Storage**: Local filesystem with nginx serving
+- **Authentication**: JWT-based auth system
+- **Deployment**: Simple Docker setup
 
-Rows: Default is 6
+## Development vs Production
 
-Min: 1 row
-Max: No technical limit
-Common values: 4-8 rows for typical hero sections
+### Development Setup (Separate Ports)
+For local development with hot reload and separate ports:
 
+```bash
+# Start development environment
+docker compose -f docker-compose.dev.yml up --build
 
+# Access services:
+# Frontend: http://localhost:5173 (React dev server with hot reload)
+# Backend API: http://localhost:4001
+# Uploads: http://localhost:8080
+# Database: localhost:5432
+```
 
-Grid Positioning Values
-When using the gridClasses property in HeroGridItem:
-Column Start (col-start-{n})
+### Production Setup (Single Port)  
+For production deployment with everything on port 80:
 
-Min: 1 (starting from the left edge)
-Max: Equal to the number of columns (12 by default)
+```bash
+# Start production environment  
+docker compose up --build
 
-Column Span (col-span-{n})
+# Access application:
+# Everything: http://localhost (or your domain)
+```
 
-Min: 1 (occupying a single column)
-Max: Equal to the number of columns (12 by default)
-Special value: col-span-full to span all columns
+## Quick Deployment
 
-Row Start (row-start-{n})
+### Prerequisites
 
-Min: 1 (starting from the top edge)
-Max: Equal to the number of rows (6 by default)
+- Docker and Docker Compose installed on your VPS
+- A domain name pointed to your VPS (optional)
 
-Row Span (row-span-{n})
+#### Install Docker on Linux (Ubuntu/Debian):
 
-Min: 1 (occupying a single row)
-Max: Equal to the number of rows (6 by default)
-Special value: row-span-full to span all rows
+```bash
+# Update package index
+sudo apt update
 
-Tailwind Classes Format
-In Tailwind CSS, the grid classes follow this pattern:
+# Install Docker
+sudo apt install -y docker.io docker-compose
 
-col-start-{n}: Where n is the starting grid line (1 to columns+1)
-col-span-{n}: Where n is the number of columns to span (1 to columns)
-row-start-{n}: Where n is the starting grid line (1 to rows+1)
-row-span-{n}: Where n is the number of rows to span (1 to rows)
+# Start and enable Docker
+sudo systemctl start docker
+sudo systemctl enable docker
 
-Responsive Considerations
-For responsive designs:
+# Add your user to docker group (optional, to run without sudo)
+sudo usermod -aG docker $USER
+# Log out and back in for group changes to take effect
 
-Use Tailwind's responsive prefixes: sm:, md:, lg:, xl:, 2xl:
-Example: col-span-12 md:col-span-6 lg:col-span-4
-This creates a 12-column wide element on mobile, 6-column on tablet, and 4-column on desktop
+# Verify installation
+docker --version
+docker-compose --version
+```
 
-Practical Constraints
-When setting up your grid, keep these practical constraints in mind:
+#### Install Docker on CentOS/RHEL:
 
-The sum of col-start and col-span should not exceed (columns + 1)
+```bash
+# Install Docker
+sudo yum install -y docker docker-compose
 
-Example: If col-start-8 and columns=12, col-span can be at most 5
+# Start and enable Docker
+sudo systemctl start docker
+sudo systemctl enable docker
 
+# Add your user to docker group (optional)
+sudo usermod -aG docker $USER
 
-The sum of row-start and row-span should not exceed (rows + 1)
+# Verify installation
+docker --version
+docker-compose --version
+```
 
-Example: If row-start-4 and rows=6, row-span can be at most 3
+### 1. Clone Repository
 
+```bash
+git clone [your-repository-url]
+cd hubpkt-fullstack
+```
 
-Elements can overlap if their grid areas intersect, so plan your layout carefully
+### 2. Configure Environment
 
-Best Practices
+```bash
+cp .env.example .env
+```
 
-Start simple with fewer rows and columns (like 12×6) until you're comfortable
-Use even numbers for columns (12, 16, 24) to make divisions easier
-Plan your responsive breakpoints carefully to avoid layout shifts
-Consider using named grid areas for more complex layouts
+Edit the `.env` file with your configuration:
+
+```env
+# Database Configuration
+POSTGRES_USER=hubpktadmin
+POSTGRES_PASSWORD=your-secure-password-here
+POSTGRES_DB=hubpkt
+DATABASE_URL=postgres://hubpktadmin:your-secure-password-here@postgres:5432/hubpkt
+
+# Security (generate secure random strings)
+JWT_SECRET=your-super-long-jwt-secret-key-here-min-256-chars
+API_KEY=your-api-key-here
+
+# Client Configuration  
+CLIENT_ORIGIN=http://your-domain.com  # or http://your-vps-ip
+VITE_API_KEY=your-api-key-here
+VITE_API_BASE_URL=http://your-domain.com/api  # or http://your-vps-ip/api
+
+# App Settings
+REGISTRATION_CODE=your-registration-code
+```
+
+### 3. Deploy
+
+```bash
+# If you added your user to docker group:
+docker compose up --build
+
+# Or with sudo:
+sudo docker compose up --build
+
+# Run in background (detached mode):
+docker compose up --build -d
+```
+
+The application will be available at:
+- **Main App**: http://your-domain.com (port 80)
+- **API**: http://your-domain.com/api
+- **Health Check**: http://your-domain.com/health
+
+## Development
+
+For local development with hot-reload:
+
+```bash
+# Install dependencies
+cd client && npm install
+cd ../server && npm install
+
+# Start development servers
+cd client && npm run dev    # Frontend on :5173
+cd server && npm run dev    # Backend on :4001
+```
+
+## Configuration Options
+
+### Required Variables
+
+- `DATABASE_URL`: PostgreSQL connection string
+- `JWT_SECRET`: Secret key for JWT tokens (minimum 256 characters)
+- `API_KEY`: API key for protected endpoints
+- `CLIENT_ORIGIN`: Frontend URL for CORS
+- `REGISTRATION_CODE`: Code required for user registration
+
+### Optional Variables
+
+- `VITE_JOTFORM_API_KEY`: JotForm integration
+- `VITE_TRACKING_ID_GA`: Google Analytics tracking ID
+- `MAX_FILE_SIZE`: Max upload size in bytes (default: 5MB)
+- `ALLOWED_FILE_TYPES`: Comma-separated MIME types
+
+## File Uploads
+
+Files are stored locally and served via nginx:
+- Upload path: `/app/uploads`
+- Access via: `http://your-domain.com/uploads/filename`
+- Organized by categories and types
+
+## Database
+
+The application uses PostgreSQL with Prisma ORM:
+- Automatic migrations on startup
+- Database schema in `server/prisma/schema.prisma`
+- Admin interface available via Prisma Studio (development)
+
+## Security
+
+- Helmet.js for security headers
+- Rate limiting (500 requests per 15 minutes)
+- CORS protection
+- API key authentication for protected endpoints
+- File type and size restrictions
+
+## Troubleshooting
+
+### Common Issues
+
+1. **Port 80 already in use**
+   ```bash
+   # Check what's using port 80
+   sudo lsof -i :80
+   # Stop conflicting service (e.g., Apache)
+   sudo systemctl stop apache2
+   ```
+
+2. **Database connection failed**
+   - Check DATABASE_URL format
+   - Ensure PostgreSQL container is running
+   - Verify credentials match
+
+3. **File uploads not working**
+   - Check MAX_FILE_SIZE and ALLOWED_FILE_TYPES
+   - Verify uploads volume is mounted correctly
+
+### Logs
+
+```bash
+# View application logs
+docker compose logs app
+# Or with sudo:
+sudo docker compose logs app
+
+# View database logs  
+docker compose logs postgres
+
+# Follow logs in real-time
+docker compose logs -f
+
+# View all logs
+docker compose logs
+```
+
+### Rebuild and Restart
+
+```bash
+# Stop containers
+docker compose down
+# Or with sudo:
+sudo docker compose down
+
+# Rebuild and restart
+docker compose up --build
+# Or with sudo:
+sudo docker compose up --build
+
+# Run in background
+docker compose up --build -d
+
+# Reset database (WARNING: deletes all data)
+docker compose down -v
+docker compose up --build
+
+# Check running containers
+docker ps
+
+# Check all containers (including stopped)
+docker ps -a
+```
+
+### System Management
+
+```bash
+# Check Docker service status
+sudo systemctl status docker
+
+# Restart Docker service
+sudo systemctl restart docker
+
+# Clean up unused Docker resources
+docker system prune -f
+
+# Stop all running containers
+docker stop $(docker ps -q)
+
+# Remove all containers
+docker rm $(docker ps -aq)
+```
+
+## Architecture
+
+```
+┌─────────────────┐    ┌──────────────┐    ┌─────────────┐
+│   React Client  │    │  Node.js API │    │ PostgreSQL  │
+│   (Frontend)    │◄──►│   (Backend)  │◄──►│ (Database)  │
+└─────────────────┘    └──────────────┘    └─────────────┘
+         │                       │
+         ▼                       ▼
+┌─────────────────────────────────────────────────────────┐
+│                nginx (Port 80)                         │
+│  • Serves React build                                  │
+│  • Proxies /api to backend                             │
+│  • Serves uploads from /uploads                        │
+└─────────────────────────────────────────────────────────┘
+```
+
+## Support
+
+For issues or questions:
+1. Check the logs using `docker compose logs`
+2. Verify your `.env` configuration
+3. Ensure all required environment variables are set
+4. Check that your domain DNS is properly configured
