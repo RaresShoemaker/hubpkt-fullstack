@@ -65,7 +65,7 @@ const useAuthenticationForm = () => {
     const isRegisterValid = 
       isLoginValid && 
       state.isValidConfirmPassword &&
-      state.isValidRegistrationCode && // Add this
+      (import.meta.env.DEV || state.isValidRegistrationCode) && // Skip registration code check in dev
       state.password === state.confirmPassword;
 
     try {
@@ -104,6 +104,10 @@ const useAuthenticationForm = () => {
 
   // Add registration code validator
   const registrationCodeValidator = useCallback((value: string) => {
+    // Skip validation in development mode
+    if (import.meta.env.DEV) {
+      return null;
+    }
     if (!value || value.trim().length === 0) {
       return 'Registration code is required';
     }
@@ -123,7 +127,7 @@ const useAuthenticationForm = () => {
       : state.isValidEmail && 
         state.isValidPassword && 
         state.isValidConfirmPassword &&
-        state.isValidRegistrationCode && // Add this
+        (import.meta.env.DEV || state.isValidRegistrationCode) && // Skip registration code check in dev
         state.password === state.confirmPassword
   };
 };

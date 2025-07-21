@@ -27,7 +27,8 @@ export const userRegister = async (data: UserTypes.RegisterUserInput) => {
 	const userPassword = await hashPassword(data.password);
 	const user = await prisma.user.create({
 		data: {
-			...data,
+			name: data.name,
+			email: data.email,
 			password: userPassword,
 			deletedAt: null
 		}
