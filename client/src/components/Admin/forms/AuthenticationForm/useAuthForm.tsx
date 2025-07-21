@@ -39,8 +39,8 @@ const useAuthenticationForm = () => {
         return { ...state, isValidPassword: action.payload };
       case 'SET_CONFIRM_PASSWORD_VALIDITY':
         return { ...state, isValidConfirmPassword: action.payload };
-      case 'SET_REGISTRATION_CODE_VALIDITY': // Add this
-        return { ...state, isValidRegistrationCode: action.payload };
+      // case 'SET_REGISTRATION_CODE_VALIDITY': // Add this
+      //   return { ...state, isValidRegistrationCode: action.payload };
       case 'SET_FORM_LAYOUT':
         return { 
           ...initialState, 
