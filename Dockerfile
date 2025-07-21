@@ -9,7 +9,7 @@ WORKDIR /app
 COPY server/package*.json ./server/
 COPY server/prisma ./server/prisma/
 WORKDIR /app/server
-RUN npm ci --omit=dev
+RUN npm ci
 
 # Copy client dependencies and install  
 WORKDIR /app
