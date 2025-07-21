@@ -26,6 +26,8 @@ services:
         VITE_JOTFORM_FORM_ID: ${VITE_JOTFORM_FORM_ID}
         VITE_JOTFORM_FORM_CREATORS_ID: ${VITE_JOTFORM_FORM_CREATORS_ID}
         VITE_TRACKING_ID_GA: ${VITE_TRACKING_ID_GA}
+        VITE_ENV_TYPE: ${VITE_ENV_TYPE}
+        NODE_ENV: production
     container_name: hubpkt-app
     ports:
       - "3000:80"
